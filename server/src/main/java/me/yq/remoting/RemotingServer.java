@@ -15,7 +15,6 @@ import me.yq.remoting.transport.deliver.CommandDispatcher;
 import me.yq.remoting.transport.deliver.process.CommandHandler;
 import me.yq.remoting.transport.deliver.process.RequestProcessorManager;
 import me.yq.remoting.utils.NamedThreadFactory;
-import me.yq.support.ServerBootstrap;
 
 /**
  * chat server 的服务端通信层
@@ -36,10 +35,8 @@ public class RemotingServer {
             new NamedThreadFactory("Server-Worker-Thread", false));
 
 
-    public RemotingServer(ServerBootstrap serverBootstrap) {
-        RequestProcessorManager processorManager = serverBootstrap.getProcessorManager();
+    public RemotingServer(RequestProcessorManager processorManager) {
         CommandDispatcher dispatcher = new CommandDispatcher(processorManager);
-
         this.serverHandler = new CommandHandler(dispatcher);
     }
 
@@ -54,9 +51,9 @@ public class RemotingServer {
         bootstrap.childHandler(new ChannelInitializer<NioSocketChannel>() {
             @Override
             protected void initChannel(NioSocketChannel ch) throws Exception {
-                ch.pipeline().addLast(new LoggingHandler(LogLevel.DEBUG));
-                ch.pipeline().addLast(new ProtocolCodec());
-                ch.pipeline().addLast(serverHandler);
+                ch.pipeline().addLast("LoggingHandler",new LoggingHandler(LogLevel.DEBUG));
+                ch.pipeline().addLast("ProtocolCodec",new ProtocolCodec());
+                ch.pipeline().addLast("CommandHandler",serverHandler);
             }
         });
 

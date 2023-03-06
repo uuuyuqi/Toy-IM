@@ -1,15 +1,5 @@
 package me.yq.remoting;
 
-import me.yq.remoting.config.ClientConfig;
-import me.yq.support.ClientBootstrap;
-import me.yq.remoting.codec.protocol.ProtocolCodec;
-import me.yq.remoting.utils.NamedThreadFactory;
-import me.yq.remoting.transport.deliver.CommandDispatcher;
-import me.yq.remoting.transport.deliver.CommandSendingDelegate;
-import me.yq.remoting.transport.deliver.process.CommandHandler;
-import me.yq.remoting.transport.deliver.process.RequestProcessorManager;
-import me.yq.remoting.transport.support.BaseRequest;
-import me.yq.remoting.transport.support.BaseResponse;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
@@ -18,6 +8,15 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import lombok.extern.slf4j.Slf4j;
+import me.yq.remoting.codec.protocol.ProtocolCodec;
+import me.yq.remoting.config.ClientConfig;
+import me.yq.remoting.transport.deliver.CommandDispatcher;
+import me.yq.remoting.transport.deliver.CommandSendingDelegate;
+import me.yq.remoting.transport.deliver.process.CommandHandler;
+import me.yq.remoting.transport.deliver.process.RequestProcessorManager;
+import me.yq.remoting.transport.support.BaseRequest;
+import me.yq.remoting.transport.support.BaseResponse;
+import me.yq.remoting.utils.NamedThreadFactory;
 
 import java.net.InetSocketAddress;
 
@@ -27,9 +26,9 @@ public class RemotingClient {
 
     private Channel serverChannel;
 
-    private final ClientBootstrap clientBootstrap;
-
     private final CommandHandler clientHandler;
+
+    private final CommandSendingDelegate sendingDelegate;
 
     private final EventLoopGroup workerGroup = new NioEventLoopGroup(
             Runtime.getRuntime().availableProcessors() * 2,
@@ -37,14 +36,11 @@ public class RemotingClient {
     );
 
 
-    public RemotingClient(ClientBootstrap clientBootstrap) {
-
-        this.clientBootstrap = clientBootstrap;
-
-        RequestProcessorManager processorManager = clientBootstrap.getProcessorManager();
+    public RemotingClient(RequestProcessorManager processorManager,CommandSendingDelegate sendingDelegate) {
         CommandDispatcher dispatcher = new CommandDispatcher(processorManager);
-
         this.clientHandler = new CommandHandler(dispatcher);
+
+        this.sendingDelegate = sendingDelegate;
     }
 
     /**
@@ -63,9 +59,9 @@ public class RemotingClient {
             bootstrap.handler(new ChannelInitializer<NioSocketChannel>() {
                 @Override
                 protected void initChannel(NioSocketChannel ch) throws Exception {
-                    ch.pipeline().addLast(new LoggingHandler(LogLevel.DEBUG));
-                    ch.pipeline().addLast(new ProtocolCodec());
-                    ch.pipeline().addLast(clientHandler);
+                    ch.pipeline().addLast("LoggingHandler",new LoggingHandler(LogLevel.DEBUG));
+                    ch.pipeline().addLast("ProtocolCodec",new ProtocolCodec());
+                    ch.pipeline().addLast("CommandHandler",clientHandler);
                 }
             });
 
@@ -92,7 +88,6 @@ public class RemotingClient {
 
 
     public BaseResponse sendRequest(BaseRequest request) {
-        CommandSendingDelegate sendingDelegate = this.clientBootstrap.getSendingDelegate();
         return sendingDelegate.sendRequestSync(this.serverChannel, request);
     }
 

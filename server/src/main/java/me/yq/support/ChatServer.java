@@ -1,7 +1,6 @@
-package me.yq;
+package me.yq.support;
 
 import me.yq.remoting.RemotingServer;
-import me.yq.support.ServerBootstrap;
 
 /**
  * 服务端
@@ -10,9 +9,13 @@ import me.yq.support.ServerBootstrap;
  */
 public class ChatServer {
 
+    private final RemotingServer server;
+
+    public ChatServer(RemotingServer server) {
+        this.server = server;
+    }
+
     public void start() {
-        ServerBootstrap serverBootstrap = new ServerBootstrap();
-        RemotingServer server = new RemotingServer(serverBootstrap);
         server.start();
     }
 }

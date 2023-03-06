@@ -1,9 +1,9 @@
 package me.yq.remoting.processor.impl;
 
+import io.netty.channel.Channel;
+import lombok.extern.slf4j.Slf4j;
 import me.yq.biz.Message;
 import me.yq.biz.domain.User;
-import me.yq.service.OnlineUserService;
-import me.yq.support.ServerBootstrap;
 import me.yq.remoting.transport.deliver.CommandSendingDelegate;
 import me.yq.remoting.transport.deliver.process.RequestProcessor;
 import me.yq.remoting.transport.deliver.process.RequestWrapper;
@@ -11,8 +11,7 @@ import me.yq.remoting.transport.support.BaseRequest;
 import me.yq.remoting.transport.support.BaseResponse;
 import me.yq.remoting.transport.support.constant.BizCode;
 import me.yq.remoting.transport.support.constant.ResponseStatus;
-import io.netty.channel.Channel;
-import lombok.extern.slf4j.Slf4j;
+import me.yq.service.OnlineUserService;
 
 
 /**
@@ -26,10 +25,10 @@ public class MessagingTransferProcessor extends RequestProcessor {
 
     private final OnlineUserService onlineUserService = OnlineUserService.getInstance();
 
-    private final ServerBootstrap serverBootstrap;
+    private final CommandSendingDelegate sendingDelegate;
 
-    public MessagingTransferProcessor(ServerBootstrap serverBootstrap) {
-        this.serverBootstrap = serverBootstrap;
+    public MessagingTransferProcessor(CommandSendingDelegate sendingDelegate) {
+        this.sendingDelegate = sendingDelegate;
     }
 
     /**
@@ -51,6 +50,8 @@ public class MessagingTransferProcessor extends RequestProcessor {
         BaseResponse response;
         try {
             response = sendMessageToTarget(message, targetUser);
+            if (response.getStatus() != ResponseStatus.SUCCESS)
+                throw new RuntimeException("向目标用户发送信息失败！信息：" + response.getReturnMsg(),(Throwable) response.getAppResponse());
         }catch (Exception e) {
             log.error("向对方发送消息时出现异常，信息：{}",e.getMessage());
             response = new BaseResponse(ResponseStatus.FAILED,"出现了一些异常，要不重发试试？",null);
@@ -66,10 +67,7 @@ public class MessagingTransferProcessor extends RequestProcessor {
      */
     private BaseResponse sendMessageToTarget(Message message, User targetUser){
         Channel targetChannel = onlineUserService.getUserChannel(targetUser);
-
-        CommandSendingDelegate sendingDelegate = this.serverBootstrap.getSendingDelegate();
         BaseRequest request = new BaseRequest(BizCode.Messaging,message);
-
         return sendingDelegate.sendRequestSync(targetChannel,request);
     }
 }

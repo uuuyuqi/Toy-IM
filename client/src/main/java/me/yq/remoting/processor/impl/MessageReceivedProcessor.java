@@ -1,12 +1,12 @@
 package me.yq.remoting.processor.impl;
 
 import me.yq.biz.Message;
-import me.yq.support.ChatClient;
 import me.yq.remoting.transport.deliver.process.RequestProcessor;
 import me.yq.remoting.transport.deliver.process.RequestWrapper;
 import me.yq.remoting.transport.support.BaseRequest;
 import me.yq.remoting.transport.support.BaseResponse;
 import me.yq.remoting.transport.support.constant.ResponseStatus;
+import me.yq.support.ChatClient;
 
 /**
  * 消息接收处理器
@@ -23,14 +23,16 @@ public class MessageReceivedProcessor extends RequestProcessor {
 
     @Override
     public BaseResponse process(RequestWrapper requestWrapper) {
+
+        BaseRequest request = requestWrapper.getRequest();
+        Message message = (Message) request.getAppRequest();
         try {
-            BaseRequest request = requestWrapper.getRequest();
-            Message message = (Message) request.getAppRequest();
             client.acceptMsg(message.getFromUser(),message.getMsg());
         }catch (Exception e) {
-            return new BaseResponse(ResponseStatus.FAILED,"接收方出了一点意外，请稍后再试～",null);
+            e.printStackTrace();
+            return new BaseResponse(ResponseStatus.FAILED,"接收方出了一点意外，请稍后再试～",e);
         }
 
-        return new BaseResponse("接收方已收到信息！");
+        return new BaseResponse("[" + message.getToUser() +"]已收到信息！");
     }
 }

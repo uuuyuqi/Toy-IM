@@ -1,7 +1,7 @@
 package me.yq.remoting.transport.deliver.process;
 
-import me.yq.remoting.transport.support.BaseRequest;
 import io.netty.channel.Channel;
+import me.yq.remoting.transport.support.BaseRequest;
 
 /**
  * 消息包装，该系统在设计上，很多时候是需要服务端得知是哪个 channel 发来的请求。

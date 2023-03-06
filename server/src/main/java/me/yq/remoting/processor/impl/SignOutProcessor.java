@@ -1,14 +1,14 @@
 package me.yq.remoting.processor.impl;
 
+import lombok.extern.slf4j.Slf4j;
 import me.yq.biz.SignOutRequest;
 import me.yq.biz.domain.User;
-import me.yq.service.OnlineUserService;
 import me.yq.remoting.transport.deliver.RequestRecord;
 import me.yq.remoting.transport.deliver.process.RequestProcessor;
 import me.yq.remoting.transport.deliver.process.RequestWrapper;
 import me.yq.remoting.transport.support.BaseRequest;
 import me.yq.remoting.transport.support.BaseResponse;
-import lombok.extern.slf4j.Slf4j;
+import me.yq.service.OnlineUserService;
 
 /**
  * 登出处理器, 处理 {@link SignOutRequest} 对象

@@ -1,5 +1,6 @@
 package me.yq.repository;
 
+import me.yq.biz.domain.Friend;
 import me.yq.biz.domain.User;
 
 import java.util.ArrayList;
@@ -12,18 +13,24 @@ import java.util.List;
  * @version v1.0 2023-02-15 9:27 AM
  */
 public class UserDao {
+
+    private final List<User> userTable = new ArrayList<User>();
+
     public UserDao() {
+        ArrayList<Friend> friends = new ArrayList<>(3);
+        friends.add(new Friend(157146,"yq"));
+        friends.add(new Friend(680712,"Jack"));
+        friends.add(new Friend(909900,"Lydia"));
+
+        userTable.add(new User(157146, "abcde", "yq", 24, "杭州市萧山区钱江世纪城", "每天保持训练！", friends));
+        userTable.add(new User(680712, "rm-rf/@12345","Jack", 35, "美国俄亥俄州", "让我们一起学习吧",friends));
+        userTable.add(new User(909900, "123456","Lydia", 18, "安徽省合肥市蜀山区", "健身让我年轻",friends));
     }
 
     public User findUser(User user) {
         return findFromMockDB(user);
     }
 
-    private final List<User> userTable = new ArrayList<User>() {{
-        add(new User(157146, "abcde", "yq", 24, "杭州市萧山区钱江世纪城", "每天保持训练！",null));
-        add(new User(680712, "rm-rf/@12345","Jack", 35, "美国俄亥俄州", "让我们一起学习吧",null));
-        add(new User(909900, "123456","Lydia", 18, "安徽省合肥市蜀山区", "健身让我年轻",null));
-    }};
 
     private User findFromMockDB(User target) {
         for (User user : userTable) {

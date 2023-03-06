@@ -1,4 +1,4 @@
-package me.yq.remoting.transport.domain;
+package me.yq.remoting.test.common.domain;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

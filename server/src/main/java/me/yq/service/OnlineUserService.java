@@ -1,8 +1,8 @@
 package me.yq.service;
 
-import me.yq.biz.domain.User;
 import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
+import me.yq.biz.domain.User;
 
 import java.util.Map;
 import java.util.Objects;

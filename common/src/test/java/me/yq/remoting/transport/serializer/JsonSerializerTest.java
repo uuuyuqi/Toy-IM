@@ -1,7 +1,7 @@
 package me.yq.remoting.transport.serializer;
 
-import me.yq.remoting.transport.domain.Friend;
-import me.yq.remoting.transport.domain.User;
+import me.yq.remoting.test.common.domain.Friend;
+import me.yq.remoting.test.common.domain.User;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -9,7 +9,8 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JsonSerializerTest {
     private final JsonSerializer jsonSerializer = new JsonSerializer();

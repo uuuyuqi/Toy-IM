@@ -1,13 +1,13 @@
 package me.yq.remoting.codec.protocol;
 
 
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+import lombok.extern.slf4j.Slf4j;
 import me.yq.remoting.transport.command.CommandCode;
 import me.yq.remoting.transport.command.DefaultRequestCommand;
 import me.yq.remoting.transport.command.DefaultResponseCommand;
 import me.yq.remoting.transport.command.RemotingCommand;
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-import lombok.extern.slf4j.Slf4j;
 
 import java.io.Serializable;
 import java.util.List;
@@ -151,7 +151,7 @@ public class YQCommandCodec implements Codec {
             int msgId = in.readInt();
             int totalContentSize = in.readInt();
 
-            if (in.readableBytes() < totalContentSize) { //确保 header、class、object 能读出来
+            if (in.readableBytes() < totalContentSize + 4 + 4) { //确保 header、object(及其长度标记) 能读出来
                 in.resetReaderIndex();
                 return;
             }

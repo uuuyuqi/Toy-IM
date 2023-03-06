@@ -1,10 +1,10 @@
 package me.yq.remoting.transport.deliver;
 
+import io.netty.channel.Channel;
 import me.yq.remoting.transport.command.DefaultRequestCommand;
 import me.yq.remoting.transport.command.DefaultResponseCommand;
 import me.yq.remoting.transport.support.BaseRequest;
 import me.yq.remoting.transport.support.BaseResponse;
-import io.netty.channel.Channel;
 
 /**
  * 消息发送委托

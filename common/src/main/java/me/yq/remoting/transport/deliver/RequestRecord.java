@@ -1,12 +1,12 @@
 package me.yq.remoting.transport.deliver;
 
+import io.netty.channel.Channel;
 import me.yq.remoting.transport.command.DefaultRequestCommand;
 import me.yq.remoting.transport.command.DefaultResponseCommand;
 import me.yq.remoting.transport.command.RemotingCommand;
 import me.yq.remoting.transport.constant.DefaultConfig;
 import me.yq.remoting.transport.support.BaseResponse;
 import me.yq.remoting.transport.support.constant.ResponseStatus;
-import io.netty.channel.Channel;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

@@ -102,6 +102,14 @@ public class User {
         this.friendList = friendList;
     }
 
+    public Friend queryFriend(long friendId){
+        for (Friend friend : this.friendList) {
+            if (friend.getFriendId() == friendId)
+                return friend;
+        }
+        return null;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -113,5 +121,10 @@ public class User {
     @Override
     public int hashCode() {
         return Objects.hash(userId);
+    }
+
+    @Override
+    public String toString() {
+        return name + "(" + userId +")";
     }
 }

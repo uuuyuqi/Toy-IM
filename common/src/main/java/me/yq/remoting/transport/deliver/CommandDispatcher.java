@@ -1,10 +1,10 @@
 package me.yq.remoting.transport.deliver;
 
+import io.netty.channel.Channel;
 import me.yq.remoting.transport.command.DefaultRequestCommand;
 import me.yq.remoting.transport.command.DefaultResponseCommand;
 import me.yq.remoting.transport.command.RemotingCommand;
 import me.yq.remoting.transport.deliver.process.RequestProcessorManager;
-import io.netty.channel.Channel;
 
 /**
  * 默认的消息收发器，业务服务端、客户端通用，主要用来做业务消息发送，应该满足进程唯一

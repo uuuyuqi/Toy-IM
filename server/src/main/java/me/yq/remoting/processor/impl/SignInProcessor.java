@@ -1,15 +1,16 @@
 package me.yq.remoting.processor.impl;
 
+import io.netty.channel.Channel;
+import lombok.extern.slf4j.Slf4j;
 import me.yq.biz.SignInRequest;
 import me.yq.biz.domain.User;
-import me.yq.service.OnlineUserService;
-import me.yq.service.ValidateLoginService;
 import me.yq.remoting.transport.deliver.process.RequestProcessor;
 import me.yq.remoting.transport.deliver.process.RequestWrapper;
 import me.yq.remoting.transport.support.BaseRequest;
 import me.yq.remoting.transport.support.BaseResponse;
-import io.netty.channel.Channel;
-import lombok.extern.slf4j.Slf4j;
+import me.yq.remoting.transport.support.constant.ResponseStatus;
+import me.yq.service.OnlineUserService;
+import me.yq.service.ValidateLoginService;
 
 /**
  * 登录处理器, 处理 {@link SignInRequest} 对象
@@ -38,8 +39,8 @@ public class SignInProcessor extends RequestProcessor {
         // 将对象添加到已上线列表
         onlineUserService.registerOnline(user, channel);
 
-        log.debug("用户{}信息校验通过！登陆成功！",user.getUserId());
-        return new BaseResponse("登录成功!");
+        log.debug("用户[{}]信息校验通过！登陆成功！",user.getUserId());
+        return new BaseResponse(ResponseStatus.SUCCESS,"登录成功!",user);
     }
 
 }

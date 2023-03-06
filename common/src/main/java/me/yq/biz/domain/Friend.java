@@ -1,5 +1,7 @@
 package me.yq.biz.domain;
 
+import java.util.Objects;
+
 /**
  * 好友实体
  * @author yq
@@ -24,5 +26,23 @@ public class Friend {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Friend friend = (Friend) o;
+        return friendId == friend.friendId && Objects.equals(name, friend.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(friendId, name);
+    }
+
+    @Override
+    public String toString() {
+        return name + "(" + friendId +")";
     }
 }
