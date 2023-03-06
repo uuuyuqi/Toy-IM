@@ -9,6 +9,9 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+/**
+ * hessian2 测试
+ */
 class Hessian2SerializerTest {
     private final Hessian2Serializer hessian2Serializer = new Hessian2Serializer();
 

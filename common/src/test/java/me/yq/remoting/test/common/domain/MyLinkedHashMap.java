@@ -3,6 +3,7 @@ package me.yq.remoting.test.common.domain;
 import java.util.LinkedHashMap;
 
 /**
+ * 测试实体
  * @author yq
  * @version v1.0 2023-03-01 19:23
  */
