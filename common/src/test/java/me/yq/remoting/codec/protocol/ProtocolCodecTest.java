@@ -16,6 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * 编解码测试：测了普通使用、粘包、半包、及其混合出现的情况
+ *
  */
 class ProtocolCodecTest {
 
