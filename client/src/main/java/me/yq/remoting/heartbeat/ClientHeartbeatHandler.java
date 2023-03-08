@@ -21,16 +21,22 @@ public class ClientHeartbeatHandler extends ChannelInboundHandlerAdapter {
 
     private static final int MAX_HB_COUNT = 3;
 
-    private final Stack<Integer> sendStack = new Stack<>();
+    /**
+     * 静态的目的是提高代码的可测试性
+     */
+    private static final Stack<Integer> sendStack = new Stack<>();
 
+    public static int getHeartbeatCount(){
+        return sendStack.size();
+    }
 
     // 触发心跳
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
         if (evt instanceof IdleStateEvent) {
 
-            if (sendStack.size() >= MAX_HB_COUNT){
-                log.error("{}次心跳失败！已经和服务端断开连接......",MAX_HB_COUNT);
+            if (getHeartbeatCount() >= MAX_HB_COUNT){
+                log.error("{}次心跳失败！已经和服务端断开连接，现在关闭客户端......",MAX_HB_COUNT);
                 System.exit(-1);
             }
 
@@ -56,7 +62,7 @@ public class ClientHeartbeatHandler extends ChannelInboundHandlerAdapter {
             HeartbeatAckCommand ack = (HeartbeatAckCommand) msg;
             int ackId = ack.getMessageId();
 
-            if (sendStack.size() >=1 && sendStack.pop() == ackId){
+            if (getHeartbeatCount() >=1 && sendStack.pop() == ackId){
                 log.info("心跳成功！");
                 sendStack.clear();
             }
@@ -65,7 +71,8 @@ public class ClientHeartbeatHandler extends ChannelInboundHandlerAdapter {
             }
 
         }
-        super.channelRead(ctx, msg);
+        else
+            super.channelRead(ctx, msg);
     }
 
 
