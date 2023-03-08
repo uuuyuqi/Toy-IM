@@ -7,11 +7,14 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
 import me.yq.remoting.codec.protocol.ProtocolCodec;
 import me.yq.remoting.config.ClientConfig;
 import me.yq.remoting.transport.deliver.CommandDispatcher;
 import me.yq.remoting.transport.deliver.CommandSendingDelegate;
+import me.yq.remoting.transport.deliver.RequestRecord;
+import me.yq.remoting.transport.deliver.heartbeat.ClientHeartbeatHandler;
 import me.yq.remoting.transport.deliver.process.CommandHandler;
 import me.yq.remoting.transport.deliver.process.RequestProcessorManager;
 import me.yq.remoting.transport.support.BaseRequest;
@@ -19,6 +22,7 @@ import me.yq.remoting.transport.support.BaseResponse;
 import me.yq.remoting.utils.NamedThreadFactory;
 
 import java.net.InetSocketAddress;
+import java.util.concurrent.TimeUnit;
 
 
 @Slf4j
@@ -30,9 +34,11 @@ public class RemotingClient {
 
     private final CommandSendingDelegate sendingDelegate;
 
+    private final RequestRecord requestRecord;
+
     private final EventLoopGroup workerGroup = new NioEventLoopGroup(
             Runtime.getRuntime().availableProcessors() * 2,
-            new NamedThreadFactory("Remoting-Client", false)
+            new NamedThreadFactory("Client-Worker", false)
     );
 
 
@@ -41,6 +47,8 @@ public class RemotingClient {
         this.clientHandler = new CommandHandler(dispatcher);
 
         this.sendingDelegate = sendingDelegate;
+
+        this.requestRecord = RequestRecord.getInstance();
     }
 
     /**
@@ -58,10 +66,14 @@ public class RemotingClient {
             bootstrap.option(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(true)); // 默认使用 1.池化 2.直接 mem
             bootstrap.handler(new ChannelInitializer<NioSocketChannel>() {
                 @Override
-                protected void initChannel(NioSocketChannel ch) throws Exception {
-                    ch.pipeline().addLast("LoggingHandler",new LoggingHandler(LogLevel.DEBUG));
-                    ch.pipeline().addLast("ProtocolCodec",new ProtocolCodec());
-                    ch.pipeline().addLast("CommandHandler",clientHandler);
+                protected void initChannel(NioSocketChannel ch) {
+                    ChannelPipeline pipeline = ch.pipeline();
+                    pipeline.addLast("LoggingHandler",new LoggingHandler(LogLevel.DEBUG));
+                    pipeline.addLast("ProtocolCodec",new ProtocolCodec());
+                    pipeline.addLast("CommandHandler",clientHandler);
+
+                    pipeline.addLast("IdleStateHandler",new IdleStateHandler(0,0,15));
+                    pipeline.addLast("ClientHeartbeatHandler",new ClientHeartbeatHandler());
                 }
             });
 
@@ -86,9 +98,27 @@ public class RemotingClient {
 
     }
 
+    public void shutdown(long timeoutMillis){
+
+
+        if (requestRecord.hasTasks()){
+            try {
+                TimeUnit.MILLISECONDS.sleep(timeoutMillis);
+            } catch (InterruptedException ignored) {
+                throw new IllegalStateException("发现有未处理的请求，但是处理线程已经关闭了！");
+            }
+        }
+        if (requestRecord.hasTasks())
+            log.warn("当前仍有未处理的请求，现在准备强制关闭！");
+
+        serverChannel.close();
+        requestRecord.removeAllTaskFromChannel(serverChannel,0);
+
+        workerGroup.shutdownGracefully();
+    }
+
 
     public BaseResponse sendRequest(BaseRequest request) {
         return sendingDelegate.sendRequestSync(this.serverChannel, request);
     }
-
 }

@@ -60,6 +60,11 @@ public class ChatClient {
 
     }
 
+    public synchronized void stop() {
+        remotingClient.shutdown(5000);
+        log.info("客户端已关闭");
+    }
+
 
     //======================================================
     // biz method

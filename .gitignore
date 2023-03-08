@@ -4,3 +4,4 @@
 /server/target/
 */logs/*
 */*.log
+*/*.log.gz
