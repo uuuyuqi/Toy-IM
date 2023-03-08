@@ -1,4 +1,4 @@
-package me.yq.remoting.processor.impl;
+package me.yq.remoting.processor;
 
 import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +54,7 @@ public class MessagingTransferProcessor extends RequestProcessor {
                 throw new RuntimeException("向目标用户发送信息失败！信息：" + response.getReturnMsg(),(Throwable) response.getAppResponse());
         }catch (Exception e) {
             log.error("向对方发送消息时出现异常，信息：{}",e.getMessage());
-            response = new BaseResponse(ResponseStatus.FAILED,"出现了一些异常，要不重发试试？",null);
+            response = new BaseResponse(ResponseStatus.FAILED,"对方网络不佳，重发消息试试？",null);
         }
         return response;
     }

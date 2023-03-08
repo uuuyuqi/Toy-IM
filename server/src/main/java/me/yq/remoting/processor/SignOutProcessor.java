@@ -1,5 +1,6 @@
-package me.yq.remoting.processor.impl;
+package me.yq.remoting.processor;
 
+import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
 import me.yq.biz.SignOutRequest;
 import me.yq.biz.domain.User;
@@ -29,14 +30,22 @@ public class SignOutProcessor extends RequestProcessor {
         try {
             BaseRequest request = requestWrapper.getRequest();
             SignOutRequest signOutRequest = (SignOutRequest) request.getAppRequest();
-            User user = signOutRequest.getUser();
-            onlineUserService.registerOffline(user);
 
-            log.debug("用户{}已经下线",user.getUserId());
+            // 客户主动下线
+            if (signOutRequest.getReason() == SignOutRequest.Reason.ACTIVE) {
+                User user = signOutRequest.getUser();
+                onlineUserService.registerOffline(user);
+                log.info("用户{}已经下线",user.getUserId());
+            }
+            // 因为网络等问题导致平台发现用户已事实下线
+            else if (signOutRequest.getReason() == SignOutRequest.Reason.PASSIVE){
+                Channel channel = signOutRequest.getChannel();
+                onlineUserService.removeDisconnectUser(channel);
+                log.info("");
+            }
         }finally {
-            requestRecord.removeAllTask(requestWrapper.getClientChannel(),3000);
+            requestRecord.removeAllTaskFromChannel(requestWrapper.getClientChannel(),3000);
         }
-
 
         return new BaseResponse("注销成功!");
     }

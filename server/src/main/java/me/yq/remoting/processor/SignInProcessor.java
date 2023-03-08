@@ -1,4 +1,4 @@
-package me.yq.remoting.processor.impl;
+package me.yq.remoting.processor;
 
 import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;

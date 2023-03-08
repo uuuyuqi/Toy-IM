@@ -1,4 +1,4 @@
-package me.yq.remoting.processor.impl;
+package me.yq.remoting.processor;
 
 import me.yq.biz.Message;
 import me.yq.remoting.transport.deliver.process.RequestProcessor;
