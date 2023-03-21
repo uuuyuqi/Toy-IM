@@ -8,7 +8,8 @@ package me.yq.remoting.transport.support.constant;
  */
 public enum BizCode {
     Messaging((byte) 11),
-    MessagingAck((byte) 12),
+
+    Noticing ((byte) 15),
 
     SignInRequest((byte) 21),
     SignInResponse((byte) 22),
@@ -36,4 +37,5 @@ public enum BizCode {
     public static boolean isLegalBizCode(byte code) {
         return lookup(code) != null;
     }
+
 }
