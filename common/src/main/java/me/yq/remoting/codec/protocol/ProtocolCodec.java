@@ -28,12 +28,12 @@ public class ProtocolCodec extends ByteToMessageCodec<RemotingCommand> {
     }
 
     @Override
-    protected void encode(ChannelHandlerContext ctx, RemotingCommand msg, ByteBuf out) throws Exception {
+    protected void encode(ChannelHandlerContext ctx, RemotingCommand msg, ByteBuf out) {
         codec.encode(msg,out);
     }
 
     @Override
-    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
         codec.decode(ctx,in,out);
     }
 }
