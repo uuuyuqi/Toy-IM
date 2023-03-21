@@ -4,10 +4,7 @@ package me.yq.remoting.codec.protocol;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import lombok.extern.slf4j.Slf4j;
-import me.yq.remoting.transport.command.CommandCode;
-import me.yq.remoting.transport.command.DefaultRequestCommand;
-import me.yq.remoting.transport.command.DefaultResponseCommand;
-import me.yq.remoting.transport.command.RemotingCommand;
+import me.yq.remoting.transport.command.*;
 
 import java.io.Serializable;
 import java.util.List;
@@ -137,7 +134,7 @@ public class YQCommandCodec implements Codec {
             //==========================================
             // part1 read control fields
             //==========================================
-            if (in.readableBytes() < this.lowestLen) { //确保 totalContentSize 能读出来
+            if (in.readableBytes() + 1 < this.lowestLen) { //确保 totalContentSize 能读出来
                 in.resetReaderIndex();
                 log.warn("尝试按 YQ 协议解包，但是内容长度没有达到协议的最小长度！");
                 return;
@@ -205,7 +202,24 @@ public class YQCommandCodec implements Codec {
                 out.add(command);
             }
             else if (cmd == CommandCode.Heartbeat.code()) {
-               // todo
+                RemotingCommand command = new HeartbeatCommand();
+
+                command.setVersion(version);
+                command.setCmd(CommandCode.Heartbeat);
+                command.setSerialization(serialization);
+                command.setMessageId(msgId);
+
+                out.add(command);
+            }
+            else if (cmd == CommandCode.HeartbeatAck.code()){
+                RemotingCommand command = new HeartbeatAckCommand();
+
+                command.setVersion(version);
+                command.setCmd(CommandCode.HeartbeatAck);
+                command.setSerialization(serialization);
+                command.setMessageId(msgId);
+
+                out.add(command);
             }
 
         } catch (Throwable t) {
