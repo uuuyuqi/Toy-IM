@@ -15,6 +15,7 @@ public class SerializerFactory {
     static {
         SERIALIZER_MAP.put(Hessian2Serializer.CODE,new Hessian2Serializer());
         SERIALIZER_MAP.put(JsonSerializer.CODE,new JsonSerializer());
+        SERIALIZER_MAP.put(KryoSerializer.CODE,new KryoSerializer());
     }
 
     public static void registerSerializer(byte code, Serializer serializer) {
