@@ -10,10 +10,11 @@ package me.yq.remoting.transport.command;
 public enum CommandCode {
 
     Heartbeat((byte) 0),
+    HeartbeatAck((byte) 1),
 
 
-    Biz_Request((byte) 1),
-    Biz_Response((byte) 2);
+    Biz_Request((byte) 11),
+    Biz_Response((byte) 12);
 
     private final byte cmd;
 
