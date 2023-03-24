@@ -3,7 +3,7 @@ package me.yq.remoting.codec.protocol;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
-import me.yq.remoting.transport.command.RemotingCommand;
+import me.yq.remoting.command.RemotingCommand;
 
 import java.util.List;
 

@@ -1,4 +1,4 @@
-package me.yq.remoting.transport.support;
+package me.yq.common;
 
 /**
  * 基础传输对象

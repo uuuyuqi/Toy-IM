@@ -1,4 +1,4 @@
-package me.yq.remoting.transport.command;
+package me.yq.remoting.command;
 
 /**
  * 心跳

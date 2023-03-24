@@ -1,6 +1,4 @@
-package me.yq.remoting.transport.support;
-
-import me.yq.remoting.transport.support.constant.ResponseStatus;
+package me.yq.common;
 
 import java.util.Objects;
 

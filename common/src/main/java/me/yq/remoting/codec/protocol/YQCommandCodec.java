@@ -4,7 +4,7 @@ package me.yq.remoting.codec.protocol;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import lombok.extern.slf4j.Slf4j;
-import me.yq.remoting.transport.command.*;
+import me.yq.remoting.command.*;
 
 import java.io.Serializable;
 import java.util.List;

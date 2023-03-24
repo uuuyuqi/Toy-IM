@@ -1,8 +1,8 @@
-package me.yq.remoting.transport.command;
+package me.yq.remoting.command;
 
+import me.yq.common.BaseResponse;
 import me.yq.remoting.transport.serializer.Serializer;
 import me.yq.remoting.transport.serializer.SerializerFactory;
-import me.yq.remoting.transport.support.BaseResponse;
 
 /**
  * 基础通信响应对象

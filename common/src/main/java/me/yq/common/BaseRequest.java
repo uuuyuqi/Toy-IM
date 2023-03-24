@@ -1,6 +1,4 @@
-package me.yq.remoting.transport.support;
-
-import me.yq.remoting.transport.support.constant.BizCode;
+package me.yq.common;
 
 /**
  * 基础请求类

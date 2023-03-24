@@ -1,4 +1,4 @@
-package me.yq.remoting.transport.support.constant;
+package me.yq.common;
 
 /**
  * 业务请求码

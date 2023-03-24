@@ -1,7 +1,8 @@
-package me.yq.remoting.transport.command;
+package me.yq.remoting.command;
 
-import me.yq.remoting.transport.constant.DefaultConfig;
-import me.yq.remoting.transport.deliver.RequestRecord;
+import me.yq.common.exception.SystemException;
+import me.yq.remoting.constant.DefaultConfig;
+import me.yq.remoting.support.RequestFutureMap;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -40,7 +41,7 @@ public abstract class RemotingCommand implements Serializable {
     static private final AtomicInteger MESSAGE_ID_GENERATOR = new AtomicInteger(0);
 
     /**
-     * 全局唯一的 msg_id, 用来做请求和响应的映射, 在消息记录上下文中会被缓存起来，参考：{@link RequestRecord}
+     * 全局唯一的 msg_id, 用来做请求和响应的映射, 在消息记录上下文中会被缓存起来，参考：{@link RequestFutureMap}
      */
     private int messageId;
 
@@ -138,7 +139,7 @@ public abstract class RemotingCommand implements Serializable {
 
 
     // ========= 序列化 =========
-    public void toRemotingCommand() {
+    public void serialize() {
         try {
             // 1.serialize headers
             serializeHeaders();
@@ -146,7 +147,7 @@ public abstract class RemotingCommand implements Serializable {
             serializeContent();
         } catch (Throwable t) {
             t.printStackTrace();
-            throw new RuntimeException("序列化时出现异常! 原因: " + t.getMessage(), t);
+            throw new SystemException("序列化时出现异常! 原因: " + t.getMessage(), t);
         }
     }
 
@@ -163,10 +164,9 @@ public abstract class RemotingCommand implements Serializable {
 
     // ========= 反序列化 =========
     /**
-     * 将 RemotingCommand 通信对象，反序列化为业务对象
-     * @return 从 RemotingCommand 解码(反序列化)而来的业务对象
+     * 将 RemotingCommand 通信对象，将业务对象反序列化出来
      */
-    public void resolveRemoting(){
+    public void deserialize(){
         try {
             // 1.deserialize headers
             deserializeHeaders();
@@ -174,7 +174,7 @@ public abstract class RemotingCommand implements Serializable {
             deserializeContent();
         } catch (Throwable t) {
             t.printStackTrace();
-            throw new RuntimeException("反序列化时出现异常! 原因: " + t.getMessage(), t);
+            throw new SystemException("反序列化时出现异常! 原因: " + t.getMessage(), t);
         }
     }
 
