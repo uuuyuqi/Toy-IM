@@ -7,13 +7,13 @@ import me.yq.biz.domain.User;
  * @author yq
  * @version v1.0 2023-02-14 5:31 PM
  */
-public class SignInRequest {
+public class LogInRequest {
     private User user;
 
-    public SignInRequest() {
+    public LogInRequest() {
     }
 
-    public SignInRequest(User user) {
+    public LogInRequest(User user) {
         this.user = user;
     }
 
