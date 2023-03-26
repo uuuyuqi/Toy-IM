@@ -4,14 +4,15 @@ import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
 import me.yq.biz.Message;
 import me.yq.biz.domain.User;
-import me.yq.remoting.transport.deliver.CommandSendingDelegate;
-import me.yq.remoting.transport.deliver.process.RequestProcessor;
-import me.yq.remoting.transport.deliver.process.RequestWrapper;
-import me.yq.remoting.transport.support.BaseRequest;
-import me.yq.remoting.transport.support.BaseResponse;
-import me.yq.remoting.transport.support.constant.BizCode;
-import me.yq.remoting.transport.support.constant.ResponseStatus;
-import me.yq.service.OnlineUserService;
+import me.yq.common.BaseRequest;
+import me.yq.common.BaseResponse;
+import me.yq.common.BizCode;
+import me.yq.common.ResponseStatus;
+import me.yq.common.exception.BusinessException;
+import me.yq.common.exception.SystemException;
+import me.yq.remoting.session.ServerSessionMap;
+import me.yq.remoting.transport.CommandSendingDelegate;
+import me.yq.remoting.transport.process.RequestProcessor;
 
 
 /**
@@ -23,35 +24,29 @@ import me.yq.service.OnlineUserService;
 @Slf4j
 public class MessagingTransferProcessor extends RequestProcessor {
 
-    private final OnlineUserService onlineUserService = OnlineUserService.getInstance();
+    private final ServerSessionMap serverSessionMap = ServerSessionMap.getInstance();
 
-    private final CommandSendingDelegate sendingDelegate;
-
-    public MessagingTransferProcessor(CommandSendingDelegate sendingDelegate) {
-        this.sendingDelegate = sendingDelegate;
-    }
 
     /**
      * 接收 fromUser 的业务消息，并将消息发送给 targetUser
-     * @param requestWrapper 消息包装，包装了消息的来源 channel
+     * @param request 业务消息请求
      * @return 消息发送结果（消息是否发送成功）
      */
     @Override
-    public BaseResponse process(RequestWrapper requestWrapper) {
-        BaseRequest request = requestWrapper.getRequest();
+    public BaseResponse process(BaseRequest request) {
         Message message = (Message) request.getAppRequest();
         User targetUser = message.getToUser();
 
-        boolean online = onlineUserService.checkOnlineState(targetUser);
+        boolean online = serverSessionMap.checkExists(targetUser.getUserId());
         if (!online) {
-            throw new RuntimeException("对方用户不在线!");
+            throw new BusinessException("对方用户不在线!");
         }
 
         BaseResponse response;
         try {
             response = sendMessageToTarget(message, targetUser);
             if (response.getStatus() != ResponseStatus.SUCCESS)
-                throw new RuntimeException("向目标用户发送信息失败！信息：" + response.getReturnMsg(),(Throwable) response.getAppResponse());
+                throw new SystemException("向目标用户发送信息失败！信息：" + response.getReturnMsg(),(Throwable) response.getAppResponse());
         }catch (Exception e) {
             log.error("向对方发送消息时出现异常，信息：{}",e.getMessage());
             response = new BaseResponse(ResponseStatus.FAILED,"对方网络不佳，重发消息试试？",null);
@@ -66,8 +61,8 @@ public class MessagingTransferProcessor extends RequestProcessor {
      * @return 发送结果
      */
     private BaseResponse sendMessageToTarget(Message message, User targetUser){
-        Channel targetChannel = onlineUserService.getUserChannel(targetUser);
+        Channel targetChannel = serverSessionMap.getUserChannel(targetUser.getUserId());
         BaseRequest request = new BaseRequest(BizCode.Messaging,message);
-        return sendingDelegate.sendRequestSync(targetChannel,request);
+        return CommandSendingDelegate.sendRequestSync(targetChannel,request);
     }
 }
