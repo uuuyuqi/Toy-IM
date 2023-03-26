@@ -1,4 +1,4 @@
-package me.yq.repository;
+package me.yq.biz.repository;
 
 import me.yq.biz.domain.Friend;
 import me.yq.biz.domain.User;
@@ -14,7 +14,7 @@ import java.util.List;
  */
 public class UserDao {
 
-    private final List<User> userTable = new ArrayList<User>();
+    private final List<User> userTable = new ArrayList<>();
 
     public UserDao() {
         ArrayList<Friend> friends = new ArrayList<>(3);
