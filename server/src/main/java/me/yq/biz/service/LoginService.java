@@ -1,8 +1,8 @@
-package me.yq.service;
+package me.yq.biz.service;
 
 import lombok.extern.slf4j.Slf4j;
 import me.yq.biz.domain.User;
-import me.yq.repository.UserDao;
+import me.yq.biz.repository.UserDao;
 
 /**
  * 校验登录信息是否合法的服务
@@ -11,15 +11,18 @@ import me.yq.repository.UserDao;
  * @version v1.0 2023-02-15 9:55 AM
  */
 @Slf4j
-public class ValidateLoginService {
+public enum LoginService {
+    INSTANCE;
 
-    public ValidateLoginService() {
+    public static LoginService getInstance(){
+        return INSTANCE;
     }
+
 
     //@Autowired
     private final UserDao userDao = new UserDao();
 
-    public User checkLoginInfo(User user){
+    public void login(User user){
 
         User userFound = userDao.findUser(user);
         if (userFound == null){
@@ -31,8 +34,6 @@ public class ValidateLoginService {
             log.error("用户名或密码错误！登录失败！");
             throw new RuntimeException("用户名或密码错误！");
         }
-
-        return userFound;
     }
 
 }
