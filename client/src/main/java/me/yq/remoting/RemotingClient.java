@@ -5,24 +5,19 @@ import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
-import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
-import me.yq.remoting.codec.protocol.ProtocolCodec;
+import me.yq.common.BaseRequest;
+import me.yq.common.BaseResponse;
 import me.yq.remoting.config.ClientConfig;
-import me.yq.remoting.transport.deliver.CommandDispatcher;
-import me.yq.remoting.transport.deliver.CommandSendingDelegate;
-import me.yq.remoting.transport.deliver.RequestRecord;
-import me.yq.remoting.transport.deliver.heartbeat.ClientHeartbeatHandler;
-import me.yq.remoting.transport.deliver.process.CommandHandler;
-import me.yq.remoting.transport.deliver.process.RequestProcessorManager;
-import me.yq.remoting.transport.support.BaseRequest;
-import me.yq.remoting.transport.support.BaseResponse;
+import me.yq.remoting.support.ChannelAttributes;
+import me.yq.remoting.support.RequestFutureMap;
+import me.yq.remoting.transport.CommandSendingDelegate;
 import me.yq.remoting.utils.NamedThreadFactory;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.TimeUnit;
+import java.util.LinkedHashMap;
+import java.util.Objects;
+import java.util.Set;
 
 
 @Slf4j
@@ -30,11 +25,17 @@ public class RemotingClient {
 
     private Channel serverChannel;
 
-    private final CommandHandler clientHandler;
+    /**
+     * 定制化的 handler，如果该 handler 为空，则构建 通信层时 采用默认的 handler 做处理。<br/>
+     * 这个 handlers 集合会被 {@link RemotingClient#registerHandlerInOrder(String name, ChannelHandler handler)} 注入，
+     * 在组装 通信客户端 时，会优先以该结构为准，参考 {@link RemotingClient#start()}
+     */
+    private final LinkedHashMap<String, ChannelHandler> customHandlers = new LinkedHashMap<>();
 
-    private final CommandSendingDelegate sendingDelegate;
 
-    private final RequestRecord requestRecord;
+    public RemotingClient(LinkedHashMap<String, ChannelHandler> customHandlers) {
+        this.customHandlers.putAll(Objects.requireNonNull(customHandlers));
+    }
 
     private final EventLoopGroup workerGroup = new NioEventLoopGroup(
             Runtime.getRuntime().availableProcessors() * 2,
@@ -42,13 +43,10 @@ public class RemotingClient {
     );
 
 
-    public RemotingClient(RequestProcessorManager processorManager,CommandSendingDelegate sendingDelegate) {
-        CommandDispatcher dispatcher = new CommandDispatcher(processorManager);
-        this.clientHandler = new CommandHandler(dispatcher);
-
-        this.sendingDelegate = sendingDelegate;
-
-        this.requestRecord = RequestRecord.getInstance();
+    public synchronized void registerHandlerInOrder(String name, ChannelHandler handler) {
+        if (name == null || name.trim().equals(""))
+            name = handler.getClass().getSimpleName();
+        customHandlers.put(name, handler);
     }
 
     /**
@@ -68,12 +66,13 @@ public class RemotingClient {
                 @Override
                 protected void initChannel(NioSocketChannel ch) {
                     ChannelPipeline pipeline = ch.pipeline();
-                    pipeline.addLast("LoggingHandler",new LoggingHandler(LogLevel.DEBUG));
-                    pipeline.addLast("ProtocolCodec",new ProtocolCodec());
-                    pipeline.addLast("CommandHandler",clientHandler);
-
-                    pipeline.addLast("IdleStateHandler",new IdleStateHandler(0,0,15));
-                    pipeline.addLast("ClientHeartbeatHandler",new ClientHeartbeatHandler());
+                    if (customHandlers.size() > 0) {
+                        Set<String> handlerNames = customHandlers.keySet();
+                        for (String handlerName : handlerNames) {
+                            ChannelHandler handler = customHandlers.get(handlerName);
+                            pipeline.addLast(handlerName, handler);
+                        }
+                    }
                 }
             });
 
@@ -98,27 +97,20 @@ public class RemotingClient {
 
     }
 
-    public void shutdown(long timeoutMillis){
+    public void shutdown(long timeoutMillis) {
 
+        if (timeoutMillis < 0)
+            throw new RuntimeException("非法的优雅关闭超时时间: " + timeoutMillis);
 
-        if (requestRecord.hasTasks()){
-            try {
-                TimeUnit.MILLISECONDS.sleep(timeoutMillis);
-            } catch (InterruptedException ignored) {
-                throw new IllegalStateException("发现有未处理的请求，但是处理线程已经关闭了！");
-            }
-        }
-        if (requestRecord.hasTasks())
-            log.warn("当前仍有未处理的请求，现在准备强制关闭！");
+        RequestFutureMap requestFutureMap = serverChannel.attr(ChannelAttributes.REQUEST_FUTURE_MAP).get();
+        requestFutureMap.removeAllFuturesSafe(timeoutMillis);
 
         serverChannel.close();
-        requestRecord.removeAllTaskFromChannel(serverChannel,0);
-
         workerGroup.shutdownGracefully();
     }
 
 
     public BaseResponse sendRequest(BaseRequest request) {
-        return sendingDelegate.sendRequestSync(this.serverChannel, request);
+        return CommandSendingDelegate.sendRequestSync(this.serverChannel, request);
     }
 }
