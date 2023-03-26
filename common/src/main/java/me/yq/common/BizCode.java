@@ -11,10 +11,9 @@ public enum BizCode {
 
     Noticing ((byte) 15),
 
-    SignInRequest((byte) 21),
-    SignInResponse((byte) 22),
+    LogInRequest((byte) 21),
 
-    SignOutRequest((byte) 32);
+    LogOutRequest((byte) 32);
 
     private final byte code;
 
