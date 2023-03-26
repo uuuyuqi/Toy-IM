@@ -1,11 +1,10 @@
 package me.yq.remoting.processor;
 
 import me.yq.biz.Message;
-import me.yq.remoting.transport.deliver.process.RequestProcessor;
-import me.yq.remoting.transport.deliver.process.RequestWrapper;
-import me.yq.remoting.transport.support.BaseRequest;
-import me.yq.remoting.transport.support.BaseResponse;
-import me.yq.remoting.transport.support.constant.ResponseStatus;
+import me.yq.common.BaseRequest;
+import me.yq.common.BaseResponse;
+import me.yq.common.ResponseStatus;
+import me.yq.remoting.transport.process.RequestProcessor;
 import me.yq.support.ChatClient;
 
 /**
@@ -15,6 +14,9 @@ import me.yq.support.ChatClient;
  */
 public class MessageReceivedProcessor extends RequestProcessor {
 
+    /**
+     * 终端，用于展示消息，和客户度操作
+     */
     private final ChatClient client;
 
     public MessageReceivedProcessor(ChatClient client) {
@@ -22,15 +24,14 @@ public class MessageReceivedProcessor extends RequestProcessor {
     }
 
     @Override
-    public BaseResponse process(RequestWrapper requestWrapper) {
+    public BaseResponse process(BaseRequest request) {
 
-        BaseRequest request = requestWrapper.getRequest();
         Message message = (Message) request.getAppRequest();
         try {
             client.acceptMsg(message.getFromUser(),message.getMsg());
         }catch (Exception e) {
             e.printStackTrace();
-            return new BaseResponse(ResponseStatus.FAILED,"接收方出了一点意外，请稍后再试～",e);
+            return new BaseResponse(ResponseStatus.FAILED,"对方网络不佳，请稍后再试～",e);
         }
 
         return new BaseResponse("[" + message.getToUser() +"]已收到信息！");
