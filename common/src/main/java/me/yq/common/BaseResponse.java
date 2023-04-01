@@ -8,6 +8,9 @@ import java.util.Objects;
  * @version v1.0 2023-02-16 10:55 AM
  */
 public class BaseResponse extends BaseTransferObject{
+    /**
+     * 返回状态
+     */
     private ResponseStatus status;
 
     /**
@@ -15,14 +18,26 @@ public class BaseResponse extends BaseTransferObject{
      */
     private String returnMsg;
 
+    public BaseResponse(ResponseStatus responseStatus){
+        super(null);
+        this.status = responseStatus;
+    }
+
     /**
      * 出现异常的情况下，appResponse 是一个 Throwable 对象
      * @param appResponse  响应对象
      */
     public BaseResponse(Object appResponse) {
         super(appResponse);
-        this.status = ResponseStatus.SUCCESS;
-        this.returnMsg = "success";
+        if (appResponse instanceof Throwable){
+            this.status = ResponseStatus.FAILED;
+            this.returnMsg = ((Throwable) appResponse).getMessage();
+        }
+        else {
+            this.status = ResponseStatus.SUCCESS;
+            this.returnMsg = "success";
+        }
+
     }
 
     public BaseResponse(ResponseStatus status, String errorMsg, Object appResponse) {
