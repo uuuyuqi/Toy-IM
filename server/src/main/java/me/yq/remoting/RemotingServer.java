@@ -1,17 +1,23 @@
 package me.yq.remoting;
 
+import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
-import me.yq.remoting.config.ServerConfig;
+import me.yq.remoting.codec.protocol.ProtocolCodec;
+import me.yq.remoting.config.Config;
+import me.yq.remoting.config.ServerConfigNames;
+import me.yq.remoting.connection.ConnectionHandler;
+import me.yq.remoting.connection.ServerHeartbeatHandler;
+import me.yq.remoting.transport.process.CommandHandler;
 import me.yq.remoting.utils.NamedThreadFactory;
-
-import java.util.LinkedHashMap;
-import java.util.Objects;
-import java.util.Set;
+import me.yq.support.ChatServer;
 
 /**
  * chat server 的服务端通信层 <br/>
@@ -21,14 +27,13 @@ import java.util.Set;
 @Slf4j
 public class RemotingServer{
 
-    /**
-     * pipeline 处理器
-     */
-    private final LinkedHashMap<String, ChannelHandler> customHandlers = new LinkedHashMap<>();
+
+    private final ChatServer server;
 
     private final NioEventLoopGroup boss = new NioEventLoopGroup(
             1,
             new NamedThreadFactory("Server-Boss-Thread", false));
+
     private final NioEventLoopGroup worker = new NioEventLoopGroup(
             Runtime.getRuntime().availableProcessors() + 1,
             new NamedThreadFactory("Server-Worker-Thread", false));
@@ -36,34 +41,50 @@ public class RemotingServer{
 
     private  Channel serverChannel;
 
-    public RemotingServer(LinkedHashMap<String, ChannelHandler> customHandlers) {
-        this.customHandlers.putAll(Objects.requireNonNull(customHandlers));
+
+    public RemotingServer(ChatServer chatServer) {
+        this.server = chatServer;
     }
+
 
     /**
      * 启动通信客户端
      */
     public void start() {
-        io.netty.bootstrap.ServerBootstrap bootstrap = new io.netty.bootstrap.ServerBootstrap();
+        Config serverConfig = server.getConfig();
+
+        ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.channel(NioServerSocketChannel.class);
         bootstrap.group(boss, worker);
-        bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, ServerConfig.CONNECT_TIMEOUT_MILLIS); // 建联超时时间 3 秒
+        bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, serverConfig.getInt(ServerConfigNames.CONNECT_TIMEOUT_MILLIS)); // 建联超时时间 3 秒
         bootstrap.option(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(true)); // 默认使用 1.池化 2.直接 mem
         bootstrap.childOption(ChannelOption.SO_KEEPALIVE, true);
         bootstrap.childOption(ChannelOption.TCP_NODELAY, true);  // 禁止粘包
+
+        LoggingHandler loggingHandler = new LoggingHandler(LogLevel.DEBUG);
+        ConnectionHandler connectionHandler = new ConnectionHandler(this.server.getSessionMap());
+        ServerHeartbeatHandler heartbeatHandler = new ServerHeartbeatHandler(this.server.getSessionMap());
+        CommandHandler commandHandler = new CommandHandler(this.server.getUserProcessor());
         bootstrap.childHandler(new ChannelInitializer<NioSocketChannel>() {
             @Override
             protected void initChannel(NioSocketChannel ch) {
                 ChannelPipeline pipeline = ch.pipeline();
-                Set<String> handlerNames = customHandlers.keySet();
-                for (String handlerName : handlerNames) {
-                    ChannelHandler handler = customHandlers.get(handlerName);
-                    pipeline.addLast(handlerName, handler);
+
+                pipeline.addLast("LoggingHandler", loggingHandler);
+                pipeline.addLast("ConnectionHandler",connectionHandler);
+                pipeline.addLast("ProtocolCodec", new ProtocolCodec());
+
+                if (serverConfig.getBoolean(ServerConfigNames.HEARTBEAT_ENABLE)){
+                    Integer idleSeconds = serverConfig.getInt(ServerConfigNames.CLIENT_TIMEOUT_SECONDS);
+                    pipeline.addLast("IdleStateHandler", new IdleStateHandler(0, 0, idleSeconds));
+                    pipeline.addLast("ServerHeartbeatHandler", heartbeatHandler);
                 }
+
+                pipeline.addLast("CommandHandler", commandHandler);
             }
         });
 
-        ChannelFuture channelFuture = bootstrap.bind(ServerConfig.SERVER_PORT);
+        ChannelFuture channelFuture = bootstrap.bind(serverConfig.getInt(ServerConfigNames.SERVER_PORT));
         channelFuture.addListener(
                 future -> {
                     if (!future.isSuccess())
