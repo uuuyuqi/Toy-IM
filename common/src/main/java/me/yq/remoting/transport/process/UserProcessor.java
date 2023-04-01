@@ -6,6 +6,7 @@ import me.yq.common.BaseRequest;
 import me.yq.common.BaseResponse;
 import me.yq.common.BizCode;
 import me.yq.common.ResponseStatus;
+import me.yq.common.exception.SystemException;
 import me.yq.remoting.command.DefaultRequestCommand;
 import me.yq.remoting.command.DefaultResponseCommand;
 import me.yq.remoting.command.RemotingCommand;
@@ -72,7 +73,7 @@ public class UserProcessor {
         ChannelAttributes.ChannelState channelState = ctx.channel().attr(ChannelAttributes.CHANNEL_STATE).get();
         if (channelState == ChannelAttributes.ChannelState.CANNOT_REQUEST){
             BaseResponse response = new BaseResponse(ResponseStatus.SERVER_ERROR, "系统正在停机，无法接收请求！", null);
-            sendResponseCommand(requestCommand.getMessageId(),response,ctx);
+            sendResponseIfNeed(requestCommand.getMessageId(),response,ctx);
         }
         else if (channelState == ChannelAttributes.ChannelState.CLOSED){
             // todo 后面这个地方应该是 do noting，打这个日志是方便测试
@@ -102,6 +103,8 @@ public class UserProcessor {
 
         // 2. find processor
         RequestProcessor processor = this.bizProcessors.get(request.getBizCode());
+        if (processor == null)
+            throw new SystemException("未找到交易码[" + request.getBizCode() + "]的处理器！请检查交易码的合法性或者是否设计并装配了该类型交易的处理器");
         // 设置 thread local 对象，在 processors 处理的过程中，可能会用到 channel 信息
         processor.getChannelLocal().set(ctx.channel());
 
@@ -115,9 +118,7 @@ public class UserProcessor {
         }
 
         // 4.return
-        if (response.getStatus() == ResponseStatus.NO_NEED_RESPONSE)
-            return;
-        sendResponseCommand(requestCommand.getMessageId(),response,ctx);
+        sendResponseIfNeed(requestCommand.getMessageId(),response,ctx);
 
     }
 
@@ -139,7 +140,11 @@ public class UserProcessor {
      * @param response 待返回的业务数据
      * @param ctx 返回时使用的 channel context
      */
-    private void sendResponseCommand(int requestCmdId,BaseResponse response,ChannelHandlerContext ctx){
+    private void sendResponseIfNeed(int requestCmdId, BaseResponse response, ChannelHandlerContext ctx){
+
+        if (response.getStatus() == ResponseStatus.NO_NEED_RESPONSE)
+            return;
+
         DefaultResponseCommand responseCommand = new DefaultResponseCommand(requestCmdId);
         responseCommand.setAppResponse(response);
         responseCommand.serialize(); // 序列化
