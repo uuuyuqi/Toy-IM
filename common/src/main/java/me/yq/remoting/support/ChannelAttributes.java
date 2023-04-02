@@ -17,6 +17,17 @@ public class ChannelAttributes {
      */
     public static final AttributeKey<ChannelState> CHANNEL_STATE = AttributeKey.valueOf("CHANNEL_STATE");
 
+    /**
+     * 当前心跳次数
+     */
+    public final static AttributeKey<Integer> HEARTBEAT_COUNT = AttributeKey.valueOf("HEARTBEAT_COUNT");
+
+    /**
+     * 当前期待的心跳响应 id
+     */
+    public final static AttributeKey<Integer> EXPECTED_HEARTBEAT_RESPONSE_ID = AttributeKey.valueOf("EXPECTED_HEARTBEAT_RESPONSE_ID");
+
+
     public enum ChannelState {
         CAN_REQUEST, // 正常
         CANNOT_REQUEST, // 系统正在停机
