@@ -8,8 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import me.yq.remoting.command.HeartbeatAckCommand;
 import me.yq.remoting.command.HeartbeatCommand;
 import me.yq.remoting.config.ClientConfigNames;
-import me.yq.remoting.config.Config;
 import me.yq.remoting.support.ChannelAttributes;
+import me.yq.support.ChatClient;
 
 import static io.netty.channel.ChannelHandler.Sharable;
 
@@ -26,18 +26,18 @@ import static io.netty.channel.ChannelHandler.Sharable;
 public class ClientHeartbeatHandler extends ChannelInboundHandlerAdapter {
 
 
-    private final Config clientConfig;
+    private final ChatClient chatClient;
 
-    public ClientHeartbeatHandler(Config clientConfig) {
-        this.clientConfig = clientConfig;
+
+    public ClientHeartbeatHandler(ChatClient chatClient) {
+        this.chatClient = chatClient;
     }
-
 
     // 触发心跳
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
         if (evt instanceof IdleStateEvent) {
-            Integer maxFailCount = clientConfig.getInt(ClientConfigNames.HEARTBEAT_MAX_FAIL_COUNT);
+            Integer maxFailCount = chatClient.getConfig().getInt(ClientConfigNames.HEARTBEAT_MAX_FAIL_COUNT);
             Attribute<Integer> count = ctx.channel().attr(ChannelAttributes.HEARTBEAT_COUNT);
             // 首次心跳
             if (count.get() == null)
@@ -45,7 +45,7 @@ public class ClientHeartbeatHandler extends ChannelInboundHandlerAdapter {
 
             if (count.get() >= maxFailCount) {
                 log.error("{}次心跳失败！已经和服务端断开连接，现在关闭客户端......", maxFailCount);
-                System.exit(-1);
+                chatClient.loseConnection();
             }
 
             log.info("检测到空闲，开始发送心跳！");
