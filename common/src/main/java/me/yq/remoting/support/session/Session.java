@@ -43,6 +43,9 @@ public class Session {
         // todo 将命令发送的指责整理到 session 中？
     }
 
+    public int getSessionId() {
+        return sessionId;
+    }
 
     public long getUid() {
         return uid;
