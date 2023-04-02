@@ -33,19 +33,15 @@ public class RemotingClient {
 
     private Session serverSession;
 
-
     private final EventLoopGroup workerGroup = new NioEventLoopGroup(
             Runtime.getRuntime().availableProcessors() * 2,
             new NamedThreadFactory("Client-Worker", true)
     );
 
 
-
     public RemotingClient(ChatClient chatClient) {
         this.client = chatClient;
     }
-
-
 
 
     /**
@@ -64,7 +60,7 @@ public class RemotingClient {
             bootstrap.option(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(true)); // 默认使用 1.池化 2.直接 mem
 
             LoggingHandler loggingHandler = new LoggingHandler(LogLevel.DEBUG);
-            ClientHeartbeatHandler heartbeatHandler = new ClientHeartbeatHandler(this.client.getConfig());
+            ClientHeartbeatHandler heartbeatHandler = new ClientHeartbeatHandler(this.client);
             CommandHandler commandHandler = new CommandHandler(this.client.getUserProcessor());
             bootstrap.handler(new ChannelInitializer<NioSocketChannel>() {
                 @Override
