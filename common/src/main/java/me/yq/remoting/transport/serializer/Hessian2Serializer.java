@@ -43,6 +43,7 @@ public class Hessian2Serializer implements Serializer{
         return baos.toByteArray();
     }
 
+
     @Override
     public <T> T deserialize(byte[] bytes, Class<T> clazz) {
         T result;

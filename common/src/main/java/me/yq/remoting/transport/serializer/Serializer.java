@@ -13,7 +13,6 @@ public interface Serializer {
 
     /**
      * 获取序列化器的 code
-     * @return
      */
     byte code();
 }

@@ -24,7 +24,6 @@ public class JsonSerializer implements Serializer {
     public <T> T deserialize(byte[] bytes, Class<T> clazz) {
         try {
             String json = new String(bytes,StandardCharsets.UTF_8);
-            // todo: bytes 转 object
             return JSONObject.parseObject(json,clazz);
         } catch (Exception e) {
             throw new RuntimeException("序列化时出现异常: " + e.getMessage(),e);
