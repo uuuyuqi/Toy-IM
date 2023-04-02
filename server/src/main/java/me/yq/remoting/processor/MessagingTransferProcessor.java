@@ -24,7 +24,11 @@ import me.yq.remoting.transport.process.RequestProcessor;
 @Slf4j
 public class MessagingTransferProcessor extends RequestProcessor {
 
-    private final ServerSessionMap serverSessionMap = ServerSessionMap.getInstance();
+    private final ServerSessionMap serverSessionMap;
+
+    public MessagingTransferProcessor(ServerSessionMap serverSessionMap) {
+        this.serverSessionMap = serverSessionMap;
+    }
 
 
     /**

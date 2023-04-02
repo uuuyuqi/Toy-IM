@@ -13,6 +13,8 @@ import me.yq.remoting.session.ServerSessionMap;
 import me.yq.remoting.support.session.Session;
 import me.yq.remoting.transport.process.RequestProcessor;
 
+import java.net.InetSocketAddress;
+
 /**
  * 登录处理器, 处理 {@link LogInRequest} 对象
  *
@@ -24,8 +26,13 @@ public class LogInProcessor extends RequestProcessor {
 
     // 业务服务
     private final LoginService loginService = LoginService.getInstance();
-    private final ServerSessionMap serverSessionMap = ServerSessionMap.getInstance();
     private final SendNoticeService sendNoticeService = SendNoticeService.getInstance();
+
+    private final ServerSessionMap serverSessionMap;
+
+    public LogInProcessor(ServerSessionMap serverSessionMap) {
+        this.serverSessionMap = serverSessionMap;
+    }
 
     @Override
     public BaseResponse process(BaseRequest request){
@@ -39,15 +46,20 @@ public class LogInProcessor extends RequestProcessor {
         loginService.login(user);
 
         // 先判断用户是否已经登录
-        // - 已经登录，就会将之前的登录挤掉，给客户端推送一个警告信息
+        // - 已经登录，就会将之前的登录挤掉，给客户端推送一个警告信息，并关闭老 channel
         // - 没有登录，将对象添加到 session
         Session oldSession = serverSessionMap.addSession(new Session(user.getUserId(),channel));
 
-        if (oldSession != null)
+        if (oldSession != null){
             sendNoticeService.sendNotice(
                     "[下线警告]",
-                    "检测到您的账号在另一处登录 ip，如非本人操作，请立即修改密码！",
+                    "检测到您的账号在另一处登录 ip [" + ((InetSocketAddress)channel.remoteAddress()).getAddress().getHostAddress() + "]，如非本人操作，请立即修改密码！",
                     oldSession);
+            // 老 channel 会被强行 close
+            log.warn("发生挤掉线行为，现在强行关闭老 channel！");
+            oldSession.getChannel().close();
+        }
+
         log.debug("用户[{}]信息校验通过！登陆成功！",user.getUserId());
         return new BaseResponse(ResponseStatus.SUCCESS,"登录成功!",user);
     }

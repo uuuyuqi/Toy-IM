@@ -17,7 +17,7 @@ import me.yq.remoting.transport.process.RequestProcessor;
 @Slf4j
 public class LogOutProcessor extends RequestProcessor {
 
-    private final ServerSessionMap serverSessionMap = ServerSessionMap.getInstance();
+    private final ServerSessionMap serverSessionMap = ServerSessionMap.getInstanceOrCreate(null);
 
     @Override
     public BaseResponse process(BaseRequest request) {
