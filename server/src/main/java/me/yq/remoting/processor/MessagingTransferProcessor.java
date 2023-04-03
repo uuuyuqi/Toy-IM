@@ -10,6 +10,8 @@ import me.yq.common.BizCode;
 import me.yq.common.ResponseStatus;
 import me.yq.common.exception.BusinessException;
 import me.yq.common.exception.SystemException;
+import me.yq.remoting.config.Config;
+import me.yq.remoting.config.ServerConfigNames;
 import me.yq.remoting.session.ServerSessionMap;
 import me.yq.remoting.transport.CommandSendingDelegate;
 import me.yq.remoting.transport.process.RequestProcessor;
@@ -26,10 +28,13 @@ public class MessagingTransferProcessor extends RequestProcessor {
 
     private final ServerSessionMap serverSessionMap;
 
-    public MessagingTransferProcessor(ServerSessionMap serverSessionMap) {
-        this.serverSessionMap = serverSessionMap;
-    }
+    private final Config config;
 
+
+    public MessagingTransferProcessor(ServerSessionMap serverSessionMap, Config config) {
+        this.serverSessionMap = serverSessionMap;
+        this.config = config;
+    }
 
     /**
      * 接收 fromUser 的业务消息，并将消息发送给 targetUser
@@ -48,7 +53,7 @@ public class MessagingTransferProcessor extends RequestProcessor {
 
         BaseResponse response;
         try {
-            response = sendMessageToTarget(message, targetUser);
+            response = sendMessageToTarget(message, targetUser, config.getLong(ServerConfigNames.WAIT_RESPONSE_MILLIS));
             if (response.getStatus() != ResponseStatus.SUCCESS)
                 throw new SystemException("向目标用户发送信息失败！信息：" + response.getReturnMsg(),(Throwable) response.getAppResponse());
         }catch (Exception e) {
@@ -64,9 +69,9 @@ public class MessagingTransferProcessor extends RequestProcessor {
      * @param targetUser 目标用户
      * @return 发送结果
      */
-    private BaseResponse sendMessageToTarget(Message message, User targetUser){
+    private BaseResponse sendMessageToTarget(Message message, User targetUser, long timeoutMillis) {
         Channel targetChannel = serverSessionMap.getUserChannel(targetUser.getUserId());
         BaseRequest request = new BaseRequest(BizCode.Messaging,message);
-        return CommandSendingDelegate.sendRequestSync(targetChannel,request);
+        return CommandSendingDelegate.sendRequestSync(targetChannel,request,timeoutMillis);
     }
 }

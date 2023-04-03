@@ -19,7 +19,11 @@ import me.yq.remoting.session.ServerSessionMap;
 @ChannelHandler.Sharable
 public class ServerHeartbeatHandler extends ChannelInboundHandlerAdapter {
 
-    private final ServerSessionMap serverSessionMap = ServerSessionMap.INSTANCE;
+    private final ServerSessionMap serverSessionMap;
+
+    public ServerHeartbeatHandler(ServerSessionMap serverSessionMap) {
+        this.serverSessionMap = serverSessionMap;
+    }
 
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {

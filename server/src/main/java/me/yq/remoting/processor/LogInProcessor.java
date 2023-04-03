@@ -9,6 +9,8 @@ import me.yq.biz.service.SendNoticeService;
 import me.yq.common.BaseRequest;
 import me.yq.common.BaseResponse;
 import me.yq.common.ResponseStatus;
+import me.yq.remoting.config.Config;
+import me.yq.remoting.config.ServerConfigNames;
 import me.yq.remoting.session.ServerSessionMap;
 import me.yq.remoting.support.session.Session;
 import me.yq.remoting.transport.process.RequestProcessor;
@@ -30,8 +32,11 @@ public class LogInProcessor extends RequestProcessor {
 
     private final ServerSessionMap serverSessionMap;
 
-    public LogInProcessor(ServerSessionMap serverSessionMap) {
+    private final Config config;
+
+    public LogInProcessor(ServerSessionMap serverSessionMap, Config config) {
         this.serverSessionMap = serverSessionMap;
+        this.config = config;
     }
 
     @Override
@@ -54,7 +59,8 @@ public class LogInProcessor extends RequestProcessor {
             sendNoticeService.sendNotice(
                     "[下线警告]",
                     "检测到您的账号在另一处登录 ip [" + ((InetSocketAddress)channel.remoteAddress()).getAddress().getHostAddress() + "]，如非本人操作，请立即修改密码！",
-                    oldSession);
+                    oldSession,
+                    config.getLong(ServerConfigNames.WAIT_RESPONSE_MILLIS));
             // 老 channel 会被强行 close
             log.warn("发生挤掉线行为，现在强行关闭老 channel！");
             oldSession.getChannel().close();
