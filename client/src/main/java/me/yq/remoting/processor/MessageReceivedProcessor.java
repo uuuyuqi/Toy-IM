@@ -7,6 +7,8 @@ import me.yq.common.ResponseStatus;
 import me.yq.remoting.transport.process.RequestProcessor;
 import me.yq.support.ChatClient;
 
+import java.util.List;
+
 /**
  * 消息接收处理器
  * @author yq
@@ -23,8 +25,13 @@ public class MessageReceivedProcessor extends RequestProcessor {
         this.client = client;
     }
 
+    public MessageReceivedProcessor(ChatClient client,List<Runnable> preTasks,List<Runnable> postTasks) {
+        super(preTasks,postTasks);
+        this.client = client;
+    }
+
     @Override
-    public BaseResponse process(BaseRequest request) {
+    public BaseResponse doProcess(BaseRequest request) {
 
         Message message = (Message) request.getAppRequest();
         try {

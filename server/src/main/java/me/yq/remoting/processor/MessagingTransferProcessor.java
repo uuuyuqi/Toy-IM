@@ -16,6 +16,8 @@ import me.yq.remoting.session.ServerSessionMap;
 import me.yq.remoting.transport.CommandSendingDelegate;
 import me.yq.remoting.transport.process.RequestProcessor;
 
+import java.util.List;
+
 
 /**
  * 消息收发处理器, 处理 {@link Message} 对象, Messaging 的处理非常特殊，需要进行二次转发！
@@ -36,13 +38,19 @@ public class MessagingTransferProcessor extends RequestProcessor {
         this.config = config;
     }
 
+    public MessagingTransferProcessor(ServerSessionMap serverSessionMap, Config config, List<Runnable> preTasks, List<Runnable> postTasks) {
+        super(preTasks, postTasks);
+        this.serverSessionMap = serverSessionMap;
+        this.config = config;
+    }
+
     /**
      * 接收 fromUser 的业务消息，并将消息发送给 targetUser
      * @param request 业务消息请求
      * @return 消息发送结果（消息是否发送成功）
      */
     @Override
-    public BaseResponse process(BaseRequest request) {
+    public BaseResponse doProcess(BaseRequest request) {
         Message message = (Message) request.getAppRequest();
         User targetUser = message.getToUser();
 

@@ -6,6 +6,8 @@ import me.yq.common.BaseResponse;
 import me.yq.remoting.transport.process.RequestProcessor;
 import me.yq.support.ChatClient;
 
+import java.util.List;
+
 /**
  * 专门处理来自服务端的 notice 通知
  * @author yq
@@ -19,8 +21,13 @@ public class NoticeFromServerProcessor  extends RequestProcessor {
         this.client = client;
     }
 
+    public NoticeFromServerProcessor(ChatClient client,List<Runnable> preTasks,List<Runnable> postTasks) {
+        super(preTasks,postTasks);
+        this.client = client;
+    }
+
     @Override
-    public BaseResponse process(BaseRequest request) {
+    public BaseResponse doProcess(BaseRequest request) {
         Notice notice = (Notice) request.getAppRequest();
         if (notice != null)
             client.acceptNotice(notice);

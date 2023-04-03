@@ -16,6 +16,7 @@ import me.yq.remoting.support.session.Session;
 import me.yq.remoting.transport.process.RequestProcessor;
 
 import java.net.InetSocketAddress;
+import java.util.List;
 
 /**
  * 登录处理器, 处理 {@link LogInRequest} 对象
@@ -39,8 +40,16 @@ public class LogInProcessor extends RequestProcessor {
         this.config = config;
     }
 
+    public LogInProcessor(ServerSessionMap serverSessionMap, Config config, List<Runnable> preTasks, List<Runnable> postTasks) {
+        super(preTasks, postTasks);
+        this.serverSessionMap = serverSessionMap;
+        this.config = config;
+
+    }
+
+
     @Override
-    public BaseResponse process(BaseRequest request){
+    public BaseResponse doProcess(BaseRequest request){
 
         Channel channel = getChannelLocal().get();
 
@@ -48,7 +57,7 @@ public class LogInProcessor extends RequestProcessor {
         User user = logInRequest.getUser();
 
         // 校验登录用户的用户名密码
-        loginService.login(user);
+        User userFound = loginService.login(user);
 
         // 先判断用户是否已经登录
         // - 已经登录，就会将之前的登录挤掉，给客户端推送一个警告信息，并关闭老 channel
@@ -67,7 +76,7 @@ public class LogInProcessor extends RequestProcessor {
         }
 
         log.debug("用户[{}]信息校验通过！登陆成功！",user.getUserId());
-        return new BaseResponse(ResponseStatus.SUCCESS,"登录成功!",user);
+        return new BaseResponse(ResponseStatus.SUCCESS,"登录成功!",userFound);
     }
 
 }
