@@ -2,7 +2,6 @@ package me.yq.remoting.support.session;
 
 
 import io.netty.channel.Channel;
-import me.yq.remoting.command.RemotingCommand;
 import me.yq.remoting.support.ChannelAttributes;
 import me.yq.remoting.support.RequestFutureMap;
 
@@ -31,17 +30,13 @@ public class Session {
 
     public Session(long uid, Channel channel) {
         // pre process
-        channel.attr(ChannelAttributes.REQUEST_FUTURE_MAP).set(new RequestFutureMap());
+        channel.attr(ChannelAttributes.CHANNEL_REQUEST_FUTURE_MAP).set(new RequestFutureMap());
         channel.attr(ChannelAttributes.CHANNEL_STATE).set(ChannelAttributes.ChannelState.CAN_REQUEST);
 
         this.uid = uid;
         this.channel = channel;
     }
 
-
-    public void writeAndFlush(RemotingCommand command){
-        // todo 将命令发送的指责整理到 session 中？
-    }
 
     public int getSessionId() {
         return sessionId;
