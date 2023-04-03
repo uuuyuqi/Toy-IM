@@ -44,50 +44,49 @@ public abstract class RequestProcessor {
 
     /**
      * 处理器业务
+     *
      * @param ctx       当前 channelHandlerContext
      * @param requestId 请求id
      * @param request   实际业务请求
      */
     public void processRequest(ChannelHandlerContext ctx, int requestId, BaseRequest request) {
 
-        BaseResponse response;
+        // 1.将 channel 信息放入 threadLocal 中
+        channelLocal.set(ctx.channel());
 
-        try{
-            // 1.将 channel 信息放入 threadLocal 中
-            channelLocal.set(ctx.channel());
-
-            // 2.处理 pre 扩展点
-            if (preTasks != null) {
-                for (Runnable task : preTasks) {
-                    task.run();
-                }
+        // 2.处理 pre 扩展点
+        if (preTasks != null) {
+            for (Runnable task : preTasks) {
+                task.run();
             }
-
-            // 3.处理业务
-            response = doProcess(request);
-
-
-        }catch (Exception e) {
-            response = new BaseResponse(ResponseStatus.FAILED, e.getMessage(), e);
-
-        }finally {
-            // 4.处理 post 扩展点
-            if (postTasks != null) {
-                for (Runnable task : postTasks) {
-                    task.run();
-                }
-            }
-
-            // 5.清除 threadLocal！
-            channelLocal.remove();
-
         }
 
-        CommandSendingDelegate.sendResponseOneway(ctx,requestId,response);
+        // 3.处理业务
+        BaseResponse response;
+        try {
+            response = doProcess(request);
+        } catch (Exception e) {
+            response = new BaseResponse(ResponseStatus.FAILED, e.getMessage(), e);
+        }
+
+        // 4.发送响应
+        CommandSendingDelegate.sendResponseOneway(ctx, requestId, response);
+
+        // 5.处理 post 扩展点
+        if (postTasks != null) {
+            for (Runnable task : postTasks) {
+                task.run();
+            }
+        }
+
+        // 6.清除 threadLocal！
+        channelLocal.remove();
     }
+
 
     /**
      * 处理业务请求
+     *
      * @param request 业务请求
      */
     abstract public BaseResponse doProcess(BaseRequest request);
