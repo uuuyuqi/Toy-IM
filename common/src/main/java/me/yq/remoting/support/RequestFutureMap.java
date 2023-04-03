@@ -6,7 +6,6 @@ import me.yq.common.ResponseStatus;
 import me.yq.common.exception.BusinessException;
 import me.yq.common.exception.SystemException;
 import me.yq.remoting.command.DefaultResponseCommand;
-import me.yq.remoting.constant.DefaultConfig;
 import me.yq.remoting.transport.process.CommandHandler;
 
 import java.util.Map;
@@ -71,16 +70,17 @@ public final class RequestFutureMap {
      * - 此时的对象还没有做反序列化，后续使用该对象时，需要手工做好反序列化。<br/>
      * <b>- 本方法是有状态的 take，而非无状态的 get！获取对象后会清理掉对象缓存！<b/>
      *
-     * @param msgId 消息 id
+     * @param msgId         消息 id
+     * @param timeoutMillis 超时时间
      * @return 响应 command 对象
      */
-    public DefaultResponseCommand takeResponseCommand(int msgId) {
+    public DefaultResponseCommand takeResponseCommand(int msgId, long timeoutMillis) {
         RequestFuture requestFuture = futureMap.get(msgId);
         DefaultResponseCommand responseCommand;
         try {
             if (requestFuture == null)
                 throw new SystemException("该请求未能正确发出！或已经过期！也有可能是已经获取过结果了？");
-            responseCommand = requestFuture.getResponse(DefaultConfig.DEFAULT_CONSUMER_WAIT_MILLIS);
+            responseCommand = requestFuture.getResponse(timeoutMillis);
         } catch (Throwable t) {
             responseCommand = createFailedCommand(msgId, t);
         } finally {
