@@ -8,6 +8,8 @@ import me.yq.remoting.session.ServerSessionMap;
 import me.yq.remoting.support.session.Session;
 import me.yq.remoting.transport.CommandSendingDelegate;
 
+
+// todo 接收通知失败，重发？
 /**
  * 通知发送服务
  * @author yq
@@ -21,21 +23,20 @@ public enum SendNoticeService {
     }
 
 
-    private final ServerSessionMap serverSessionMap = ServerSessionMap.INSTANCE;
+    private final ServerSessionMap serverSessionMap = ServerSessionMap.getInstanceOrCreate(null);
 
-    public void sendNotice(String title, String content, long targetUid){
+    public void sendNotice(String title, String content, long targetUid, long timeoutMillis){
         Notice notice = new Notice(targetUid, title, content);
         BaseRequest request = new BaseRequest(BizCode.Noticing, notice);
         Channel channel = serverSessionMap.getUserChannel(targetUid);
-        CommandSendingDelegate.sendRequestSync(channel,request);
+        CommandSendingDelegate.sendRequestSync(channel,request,timeoutMillis);
     }
 
 
-    // todo 接收通知失败，重发？
-    public void sendNotice(String title, String content, Session session){
+    public void sendNotice(String title, String content, Session session,long timeoutMillis){
         Notice notice = new Notice(session.getUid(), title, content);
         BaseRequest request = new BaseRequest(BizCode.Noticing, notice);
         Channel channel = session.getChannel();
-        CommandSendingDelegate.sendRequestSync(channel,request);
+        CommandSendingDelegate.sendRequestSync(channel,request,timeoutMillis);
     }
 }
