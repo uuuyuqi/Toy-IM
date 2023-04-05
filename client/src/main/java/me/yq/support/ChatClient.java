@@ -20,10 +20,13 @@ import me.yq.remoting.config.Config;
 import me.yq.remoting.config.DefaultClientConfig;
 import me.yq.remoting.processor.MessageReceivedProcessor;
 import me.yq.remoting.processor.NoticeFromServerProcessor;
+import me.yq.remoting.support.session.Session;
 import me.yq.remoting.transport.process.RequestProcessor;
 import me.yq.remoting.transport.process.UserProcessor;
 import me.yq.remoting.utils.NamedThreadFactory;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -81,11 +84,15 @@ public class ChatClient extends Stateful {
      */
     private User currentUser;
 
-    private boolean online = false;
+    private boolean onlineFlag = false;
 
+    private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-
-
+    /**
+     * 注册业务处理器，一般情况下，不需要手工注册，使用默认配置即可。当开启 useDefaultProcessors=false 时，才可以手工注册
+     * @param code 业务码
+     * @param processor 处理器
+     */
     public void registerBizProcessor(BizCode code, RequestProcessor processor) {
         if (getCurrentStatus() != Status.NEW)
             throw new IllegalStateException("只有新建状态才可以注册处理器！");
@@ -173,7 +180,7 @@ public class ChatClient extends Stateful {
      */
     public synchronized void logIn(long userId, String passwd) {
         try {
-            if (this.online)
+            if (this.onlineFlag)
                 throw new BusinessException("当前用户已登录，请勿重复登录: " + getCurrentUser());
 
             LogInRequest logInRequest = new LogInRequest();
@@ -187,7 +194,7 @@ public class ChatClient extends Stateful {
 
 
             this.setCurrentUser((User) response.getAppResponse());
-            this.online = true;
+            this.onlineFlag = true;
 
             log.info("登陆成功！服务端信息：{}", response.getReturnMsg());
 
@@ -212,12 +219,13 @@ public class ChatClient extends Stateful {
         logOutRequest.setUser(new User(userId));
 
         BaseRequest request = new BaseRequest(BizCode.LogOutRequest, logOutRequest);
-        BaseResponse response = remotingClient.sendRequest(request);
+        remotingClient.sendRequest(request);
 
-        if (response.getStatus() != ResponseStatus.SUCCESS)
-            throw new BusinessException("下线失败！原因: " + response.getReturnMsg());
+        this.setOnlineFlag(false);
+        this.setCurrentUser(null);
 
-        log.info("下线成功！服务端信息：{}", response.getReturnMsg());
+
+        log.info("已下线，现在请切换账号...");
     }
 
     /**
@@ -238,7 +246,7 @@ public class ChatClient extends Stateful {
         if (baseResponse == null)
             throw new BusinessException("信息发送失败！请检查网络");
 
-        log.info("信息已发送！收到的反馈：{}", baseResponse.getReturnMsg());
+        log.debug("信息已发送！收到的反馈：{}", baseResponse.getReturnMsg());
     }
 
     /**
@@ -249,7 +257,8 @@ public class ChatClient extends Stateful {
      */
     public void acceptMsg(User from, String msg) {
         Friend friend = getCurrentUser().queryFriend(from.getUserId());
-        log.info("用户[{}]和你说：{}", friend.getName(), msg);
+        String newMsg = String.format("%-5s-- %s\n\"%s\"\n", friend.getName(), LocalDateTime.now().format(timeFormatter),msg);
+        System.out.println(newMsg);
     }
 
     /**
@@ -268,6 +277,28 @@ public class ChatClient extends Stateful {
         //todo 直接关闭 or 重试？
         log.error("检测到和服务端的连接丢失，现在尝试重新连接......");
 
-        this.online = false;
+        this.onlineFlag = false;
+    }
+
+    /**
+     * 获取和服务端的 session
+     * @return 服务端的 session
+     */
+    public Session getServerSession() {
+        return this.remotingClient.getServerSession();
+    }
+
+    /**
+     * 注意，判断是否在线时，不仅仅通过在线状态来判断，还要检测一下当前的连接状态，是否健康
+     * @return 如果在线标志为 false，则直接返回 false，如果在线，则会二次确认当前连接是否真的健康
+     */
+    public boolean isOnline() {
+        if (!onlineFlag)
+            return false;
+        return this.remotingClient.hasConnected();
+    }
+
+    public void setOnlineFlag(boolean onlineFlag) {
+        this.onlineFlag = onlineFlag;
     }
 }
