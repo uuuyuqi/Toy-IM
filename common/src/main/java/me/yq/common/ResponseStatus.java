@@ -6,7 +6,7 @@ package me.yq.common;
  * @version v1.0 2023-02-16 11:12 AM
  */
 public enum ResponseStatus {
-    NO_NEED_RESPONSE ((byte) 0),  // 该状态一般是无需返回的内部标志
+    OK_NO_NEED_RESPONSE((byte) 0),  // 该状态一般是无需返回的内部标志
 
     SUCCESS((byte) 1),
     FAILED((byte) 2),
