@@ -33,6 +33,8 @@ public class RemotingClient {
 
     private Session serverSession;
 
+    private Bootstrap clientBootstrap;
+
     private final EventLoopGroup workerGroup = new NioEventLoopGroup(
             Runtime.getRuntime().availableProcessors() * 2,
             new NamedThreadFactory("Client-Worker", true)
@@ -76,24 +78,10 @@ public class RemotingClient {
                     pipeline.addLast("CommandHandler", commandHandler);
                 }
             });
+            clientBootstrap = bootstrap;
 
-            String serverIP = client.getConfig().getValue(ClientConfigNames.REMOTE_SERVER_HOST);
-            int serverPort = client.getConfig().getInt(ClientConfigNames.REMOTE_SERVER_PORT);
-            ChannelFuture channelFuture = bootstrap.connect(new InetSocketAddress(serverIP,serverPort));
-            channelFuture.addListener(
-                    future -> {
-                        if (!future.isSuccess()) {
-                            log.error("连接服务器失败! 错误原因: " + future.cause().getMessage());
-                            throw new RuntimeException("启动时连接服务端失败！！！");
-                        } else {
-                            log.info("连接服务器成功!");
-                        }
-                    }
-            );
+            connectToServer();
 
-            // block to wait
-            channelFuture.awaitUninterruptibly();
-            this.serverSession = new Session(channelFuture.channel());
         } catch (Exception e) {
             throw new RuntimeException("客户端服务启动失败，错误原因: " + e);
         }
@@ -106,16 +94,71 @@ public class RemotingClient {
             throw new RuntimeException("非法的优雅关闭超时时间: " + timeoutMillis);
 
         Channel serverChannel = serverSession.getChannel();
-        RequestFutureMap requestFutureMap = serverChannel.attr(ChannelAttributes.REQUEST_FUTURE_MAP).get();
+        RequestFutureMap requestFutureMap = serverChannel.attr(ChannelAttributes.CHANNEL_REQUEST_FUTURE_MAP).get();
         requestFutureMap.removeAllFuturesSafe(timeoutMillis);
 
         serverChannel.close();
         workerGroup.shutdownGracefully();
     }
 
+    /**
+     * 连接服务端。可能时首次连接，也可能时重连。
+     */
+    public void connectToServer() {
+        if (clientBootstrap == null) {
+            throw new IllegalStateException("客户端尚未启动，请先启动客户端！！！");
+        }
+
+        // 如果老连接可用，则不需要建联
+        if (serverSession != null) {
+            if (serverSession.isConnected()){
+                log.warn("当前已经连接到服务端，无需重复连接！");
+                return;
+            }
+            else{
+                Channel serverChannel = serverSession.getChannel();
+                if (serverChannel != null)
+                    serverChannel.close();
+            }
+
+        }
+
+
+        String serverIP = client.getConfig().getValue(ClientConfigNames.REMOTE_SERVER_HOST);
+        int serverPort = client.getConfig().getInt(ClientConfigNames.REMOTE_SERVER_PORT);
+        ChannelFuture channelFuture = this.clientBootstrap.connect(new InetSocketAddress(serverIP,serverPort));
+        channelFuture.addListener(
+                future -> {
+                    if (!future.isSuccess()) {
+                        log.error("连接服务器失败! 错误原因: " + future.cause().getMessage());
+                        throw new RuntimeException("启动时连接服务端失败！！！");
+                    } else {
+                        log.info("连接服务器成功!");
+                    }
+                }
+        );
+
+        // block to wait
+        channelFuture.awaitUninterruptibly();
+        Channel serverChannel = channelFuture.channel();
+        this.serverSession = new Session(channelFuture.channel());
+        // 心跳计数置 0
+        serverChannel.attr(ChannelAttributes.HEARTBEAT_COUNT).set(0);
+    }
+
+    public boolean hasConnected() {
+        return serverSession != null && serverSession.isConnected();
+    }
 
 
     public BaseResponse sendRequest(BaseRequest request) {
-        return CommandSendingDelegate.sendRequestSync(this.serverSession.getChannel(), request);
+        return CommandSendingDelegate.sendRequestSync(
+                this.serverSession.getChannel(),
+                request,
+                client.getConfig().getLong(ClientConfigNames.WAIT_RESPONSE_MILLIS));
+    }
+
+    public Session getServerSession() {
+        return serverSession;
     }
 }
