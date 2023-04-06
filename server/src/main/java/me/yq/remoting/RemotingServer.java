@@ -15,17 +15,22 @@ import me.yq.remoting.config.Config;
 import me.yq.remoting.config.ServerConfigNames;
 import me.yq.remoting.connection.ConnectionHandler;
 import me.yq.remoting.connection.ServerHeartbeatHandler;
+import me.yq.remoting.connection.ServerIdleConnHandler;
 import me.yq.remoting.transport.process.CommandHandler;
 import me.yq.remoting.utils.NamedThreadFactory;
 import me.yq.support.ChatServer;
 
+import java.util.Map;
+import java.util.function.Supplier;
+
 /**
  * chat server 的服务端通信层 <br/>
+ *
  * @author yq
  * @version v1.0 2023-02-22 11:36
  */
 @Slf4j
-public class RemotingServer{
+public class RemotingServer {
 
 
     private final ChatServer server;
@@ -39,8 +44,7 @@ public class RemotingServer{
             new NamedThreadFactory("Server-Worker-Thread", false));
 
 
-    private  Channel serverChannel;
-
+    private Channel serverChannel;
 
     public RemotingServer(ChatServer chatServer) {
         this.server = chatServer;
@@ -63,21 +67,27 @@ public class RemotingServer{
 
         LoggingHandler loggingHandler = new LoggingHandler(LogLevel.DEBUG);
         ConnectionHandler connectionHandler = new ConnectionHandler(this.server.getSessionMap());
-        ServerHeartbeatHandler heartbeatHandler = new ServerHeartbeatHandler(this.server.getSessionMap());
+        ServerIdleConnHandler idleConnHandler = new ServerIdleConnHandler(this.server.getSessionMap());
+        ServerHeartbeatHandler heartbeatHandler = new ServerHeartbeatHandler();
         CommandHandler commandHandler = new CommandHandler(this.server.getUserProcessor());
         bootstrap.childHandler(new ChannelInitializer<NioSocketChannel>() {
             @Override
             protected void initChannel(NioSocketChannel ch) {
                 ChannelPipeline pipeline = ch.pipeline();
 
+                Map<String, Supplier<ChannelHandler>> handlersAhead = server.getCustomHandlersAhead();
+                handlersAhead.forEach((name, supplier) -> pipeline.addLast(name, supplier.get()));
+
                 pipeline.addLast("LoggingHandler", loggingHandler);
-                pipeline.addLast("ConnectionHandler",connectionHandler);
+                pipeline.addLast("ConnectionHandler", connectionHandler);
                 pipeline.addLast("ProtocolCodec", new ProtocolCodec());
 
-                if (serverConfig.getBoolean(ServerConfigNames.HEARTBEAT_ENABLE)){
+                pipeline.addLast("ServerHeartbeatHandler", heartbeatHandler);
+
+                if (serverConfig.getBoolean(ServerConfigNames.IDLE_CHECK_ENABLE)) {
                     Integer idleSeconds = serverConfig.getInt(ServerConfigNames.CLIENT_TIMEOUT_SECONDS);
                     pipeline.addLast("IdleStateHandler", new IdleStateHandler(0, 0, idleSeconds));
-                    pipeline.addLast("ServerHeartbeatHandler", heartbeatHandler);
+                    pipeline.addLast("ServerIdleConnHandler", idleConnHandler);
                 }
 
                 pipeline.addLast("CommandHandler", commandHandler);
