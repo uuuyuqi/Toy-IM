@@ -25,7 +25,8 @@ import java.util.Collections;
 
 /**
  * NoticeFromServerProcessor 测试类，主要覆盖的功能点：
- * 1. 可以正常将通知提交给客户端
+ * 1.可以正常将通知提交给客户端
+ * 2.通知提交失败，能够返回通知提交失败的响应
  */
 @ExtendWith(MockitoExtension.class)
 class NoticeFromServerProcessorTest {
