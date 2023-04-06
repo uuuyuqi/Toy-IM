@@ -18,11 +18,12 @@ public class NoticeFromServerProcessor  extends RequestProcessor {
     private final ChatClient client;
 
     public NoticeFromServerProcessor(ChatClient client) {
+        super(true);
         this.client = client;
     }
 
     public NoticeFromServerProcessor(ChatClient client,List<Runnable> preTasks,List<Runnable> postTasks) {
-        super(preTasks,postTasks);
+        super(true,preTasks,postTasks);
         this.client = client;
     }
 

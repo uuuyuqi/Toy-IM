@@ -23,10 +23,11 @@ public class LogOutProcessor extends RequestProcessor {
     private final ServerSessionMap serverSessionMap = ServerSessionMap.getInstanceOrCreate(null);
 
     public LogOutProcessor() {
+        super(false);
     }
 
     public LogOutProcessor(List<Runnable> preTasks,List<Runnable> postTasks) {
-        super(preTasks,postTasks);
+        super(false,preTasks,postTasks);
     }
 
 

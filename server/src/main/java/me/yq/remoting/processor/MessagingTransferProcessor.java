@@ -34,12 +34,13 @@ public class MessagingTransferProcessor extends RequestProcessor {
 
 
     public MessagingTransferProcessor(ServerSessionMap serverSessionMap, Config config) {
+        super(true);
         this.serverSessionMap = serverSessionMap;
         this.config = config;
     }
 
     public MessagingTransferProcessor(ServerSessionMap serverSessionMap, Config config, List<Runnable> preTasks, List<Runnable> postTasks) {
-        super(preTasks, postTasks);
+        super(true,preTasks, postTasks);
         this.serverSessionMap = serverSessionMap;
         this.config = config;
     }

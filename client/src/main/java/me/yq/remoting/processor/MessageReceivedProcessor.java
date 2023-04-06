@@ -22,11 +22,12 @@ public class MessageReceivedProcessor extends RequestProcessor {
     private final ChatClient client;
 
     public MessageReceivedProcessor(ChatClient client) {
+        super(true);
         this.client = client;
     }
 
     public MessageReceivedProcessor(ChatClient client,List<Runnable> preTasks,List<Runnable> postTasks) {
-        super(preTasks,postTasks);
+        super(true,preTasks,postTasks);
         this.client = client;
     }
 

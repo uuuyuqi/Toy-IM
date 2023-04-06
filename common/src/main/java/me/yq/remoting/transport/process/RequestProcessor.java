@@ -6,12 +6,13 @@ import lombok.extern.slf4j.Slf4j;
 import me.yq.common.BaseRequest;
 import me.yq.common.BaseResponse;
 import me.yq.common.ResponseStatus;
+import me.yq.common.exception.SystemException;
 import me.yq.remoting.transport.CommandSendingDelegate;
 
 import java.util.List;
 
 /**
- * 请求处理器模板类
+ * 业务请求处理器模板类
  *
  * @author yq
  * @version v1.0 2023-02-21 14:13
@@ -20,18 +21,24 @@ import java.util.List;
 public abstract class RequestProcessor {
 
     /**
+     * 标志这个处理器是否需要做返回操作。用以区分单向处理器和有业务返回的处理器。
+     * 一般 shouldReturn 的值为 false 时，通常处理结果的 response 状态码会是 OK_NO_NEED_RESPONSE
+     */
+    private final boolean shouldReturn;
+
+    /**
      * 业务处理器前置任务，可以认为时业务处理的扩展点
      */
     private final List<Runnable> preTasks;
 
     private final List<Runnable> postTasks;
 
-    public RequestProcessor() {
-        this.preTasks = null;
-        this.postTasks = null;
+    public RequestProcessor(boolean shouldReturn) {
+        this(shouldReturn,null,null);
     }
 
-    public RequestProcessor(List<Runnable> preTasks, List<Runnable> postTasks) {
+    public RequestProcessor(boolean shouldReturn,List<Runnable> preTasks, List<Runnable> postTasks) {
+        this.shouldReturn = shouldReturn;
         this.preTasks = preTasks;
         this.postTasks = postTasks;
     }
@@ -43,7 +50,7 @@ public abstract class RequestProcessor {
     private final ThreadLocal<Channel> channelLocal = new ThreadLocal<>();
 
     /**
-     * 处理器业务
+     * 处理器业务模板，模板中增加了 channelLocal 的设置、扩展点的处理
      *
      * @param ctx       当前 channelHandlerContext
      * @param requestId 请求id
@@ -51,36 +58,46 @@ public abstract class RequestProcessor {
      */
     public void processRequest(ChannelHandlerContext ctx, int requestId, BaseRequest request) {
 
-        // 1.将 channel 信息放入 threadLocal 中
-        channelLocal.set(ctx.channel());
-
-        // 2.处理 pre 扩展点
-        if (preTasks != null) {
-            for (Runnable task : preTasks) {
-                task.run();
-            }
-        }
-
-        // 3.处理业务
-        BaseResponse response;
+        BaseResponse response = null;
         try {
-            response = doProcess(request);
-        } catch (Exception e) {
-            response = new BaseResponse(ResponseStatus.FAILED, e.getMessage(), e);
-        }
+            // 1.将 channel 信息放入 threadLocal 中
+            channelLocal.set(ctx.channel());
 
-        // 4.发送响应
-        CommandSendingDelegate.sendResponseOneway(ctx, requestId, response);
-
-        // 5.处理 post 扩展点
-        if (postTasks != null) {
-            for (Runnable task : postTasks) {
-                task.run();
+            // 2.处理 pre 扩展点
+            if (preTasks != null) {
+                for (Runnable task : preTasks) {
+                    task.run();
+                }
             }
-        }
 
-        // 6.清除 threadLocal！
-        channelLocal.remove();
+            // 3.处理业务
+            response = doProcess(request);
+
+        } catch (Exception e) {
+            if (shouldReturn)
+                response = new BaseResponse(ResponseStatus.FAILED, e.getMessage(), e);
+            else
+                throw new SystemException("处理请求[" + request + "]时出现异常！",e);
+
+        } finally {
+            // 4.发送响应
+            if (response == null){
+                throw new RuntimeException("[{"+this.getClass().getSimpleName()+"}]处理完毕后，结果为null");
+            }
+            if (response.getStatus() != ResponseStatus.OK_NO_NEED_RESPONSE)
+                CommandSendingDelegate.sendResponseOneway(ctx, requestId, response);
+
+
+            // 5.处理 post 扩展点
+            if (postTasks != null) {
+                for (Runnable task : postTasks) {
+                    task.run();
+                }
+            }
+
+            // 6.清除 threadLocal
+            channelLocal.remove();
+        }
     }
 
 

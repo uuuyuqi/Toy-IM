@@ -27,7 +27,7 @@ import java.util.List;
 @Slf4j
 public class LogInProcessor extends RequestProcessor {
 
-    // 业务服务
+
     private final LoginService loginService = LoginService.getInstance();
     private final SendNoticeService sendNoticeService = SendNoticeService.getInstance();
 
@@ -36,15 +36,15 @@ public class LogInProcessor extends RequestProcessor {
     private final Config config;
 
     public LogInProcessor(ServerSessionMap serverSessionMap, Config config) {
+        super(true);
         this.serverSessionMap = serverSessionMap;
         this.config = config;
     }
 
     public LogInProcessor(ServerSessionMap serverSessionMap, Config config, List<Runnable> preTasks, List<Runnable> postTasks) {
-        super(preTasks, postTasks);
+        super(true,preTasks, postTasks);
         this.serverSessionMap = serverSessionMap;
         this.config = config;
-
     }
 
 
