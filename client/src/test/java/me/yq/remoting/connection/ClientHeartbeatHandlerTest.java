@@ -35,14 +35,12 @@ class ClientHeartbeatHandlerTest {
 
     private final ChatClient clientMock = Mockito.mock(ChatClient.class);
 
-    private final ClientHeartbeatHandler heartbeatHandler = new ClientHeartbeatHandler(clientMock);
-
-    private final ClientHeartbeatHandler spy = Mockito.spy(heartbeatHandler);
+    private final ClientHeartbeatHandler spyHeartbeatHandler = Mockito.spy(new ClientHeartbeatHandler(clientMock));
 
 
     @BeforeEach
     void setUp() {
-        channel.pipeline().addLast(spy);
+        channel.pipeline().addLast(spyHeartbeatHandler);
     }
 
     @AfterEach
@@ -75,7 +73,7 @@ class ClientHeartbeatHandlerTest {
             assertTrue(o instanceof HeartbeatCommand,"发送的数据应该是心跳对象");
 
             return null;
-        }).when(spy).userEventTriggered(Mockito.any(), Mockito.any());
+        }).when(spyHeartbeatHandler).userEventTriggered(Mockito.any(), Mockito.any());
 
         // 模拟向 channel 中发送 exceptCount 次空闲事件
         for (int i = 0; i < exceptCount; i++) {
@@ -110,7 +108,7 @@ class ClientHeartbeatHandlerTest {
             assertTrue(o instanceof HeartbeatCommand,"发送的数据应该是心跳对象");
 
             return null;
-        }).when(spy).userEventTriggered(Mockito.any(), Mockito.any());
+        }).when(spyHeartbeatHandler).userEventTriggered(Mockito.any(), Mockito.any());
 
         // 模拟向 channel 中发送 （最大心跳失败数+1） 次空闲事件
         // 确保心跳失败
