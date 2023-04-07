@@ -187,7 +187,7 @@ public class ChatClient extends Stateful {
             logInRequest.setUser(new User(userId, passwd));
 
             BaseRequest request = new BaseRequest(BizCode.LogInRequest, logInRequest);
-            BaseResponse response = remotingClient.sendRequest(request);
+            BaseResponse response = remotingClient.sendRequestSync(request);
 
             if (response.getStatus() != ResponseStatus.SUCCESS)
                 throw new BusinessException("登陆失败！原因: " + response.getReturnMsg(), (Throwable) response.getAppResponse());
@@ -219,7 +219,7 @@ public class ChatClient extends Stateful {
         logOutRequest.setUser(new User(userId));
 
         BaseRequest request = new BaseRequest(BizCode.LogOutRequest, logOutRequest);
-        remotingClient.sendRequest(request);
+        remotingClient.sendRequestOneway(request);
 
         this.setOnlineFlag(false);
         this.setCurrentUser(null);
@@ -242,7 +242,7 @@ public class ChatClient extends Stateful {
 
         BaseRequest request = new BaseRequest(BizCode.Messaging, message);
 
-        BaseResponse baseResponse = this.remotingClient.sendRequest(request);
+        BaseResponse baseResponse = this.remotingClient.sendRequestSync(request);
         if (baseResponse == null)
             throw new BusinessException("信息发送失败！请检查网络");
 
