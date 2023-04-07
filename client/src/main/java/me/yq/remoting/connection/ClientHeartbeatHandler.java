@@ -38,20 +38,20 @@ public class ClientHeartbeatHandler extends ChannelInboundHandlerAdapter {
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
         if (evt instanceof IdleStateEvent) {
             Integer maxFailCount = chatClient.getConfig().getInt(ClientConfigNames.HEARTBEAT_MAX_FAIL_COUNT);
-            Attribute<Integer> count = ctx.channel().attr(ChannelAttributes.HEARTBEAT_COUNT);
-            // 首次心跳
-            if (count.get() == null)
-                count.set(0);
+            Attribute<Integer> currentCount = ctx.channel().attr(ChannelAttributes.HEARTBEAT_COUNT);
 
-            if (count.get() >= maxFailCount) {
-                log.error("{}次心跳失败！已经和服务端断开连接，现在关闭客户端......", maxFailCount);
+            if (currentCount.get() == null) // 首次心跳
+                currentCount.set(0);
+
+            if (currentCount.get() >= maxFailCount) {  // 默认失败了 maxFailCount 次，就断开连接
+                log.error("超过{}次心跳失败！已经和服务端断开连接，现在关闭客户端......", maxFailCount);
                 chatClient.loseConnection();
+                return;
             }
 
-            log.info("检测到空闲，开始发送心跳！");
+            log.info("检测到空闲，开始发送心跳！当前已经连续心跳失败次数[{}]", currentCount.get());
             HeartbeatCommand heartbeat = new HeartbeatCommand();
             ctx.channel().attr(ChannelAttributes.EXPECTED_HEARTBEAT_RESPONSE_ID).set(heartbeat.getMessageId());
-            count.set(count.get() + 1);
 
             ctx.writeAndFlush(heartbeat).addListener(
                     future -> {
@@ -59,6 +59,9 @@ public class ClientHeartbeatHandler extends ChannelInboundHandlerAdapter {
                             log.error("心跳发送失败");
                         }
                     });
+
+            currentCount.set(currentCount.get() + 1);
+
         } else
             super.userEventTriggered(ctx, evt);
     }
