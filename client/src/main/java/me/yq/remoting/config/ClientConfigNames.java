@@ -21,6 +21,15 @@ public class ClientConfigNames {
     public static final String HEARTBEAT_IDLE_SECONDS = "HEARTBEAT_IDLE_SECONDS";
     // 默认心跳最大失败次数
     public static final String HEARTBEAT_MAX_FAIL_COUNT = "HEARTBEAT_MAX_FAIL_COUNT";
+    // 默认心跳开启
+    public static final String HEARTBEAT_ENABLE = "HEARTBEAT_ENABLE";
+    // 停机超时时间
+    public static final String SHUTDOWN_TIMEOUT_MILLIS = "SHUTDOWN_TIMEOUT_MILLIS";
+    // 等待响应消息超时时间
+    public static final String WAIT_RESPONSE_MILLIS = "WAIT_RESPONSE_MILLIS";
+    // 发送 oneway 请求，忙等以确认请求正常发出 的等待超时时间
+    public static final String SEND_ONEWAY_CONFIRM_MILLIS = "SEND_ONEWAY_CONFIRM_MILLIS";
+
 
 
     // 业务线程池核心数
@@ -29,12 +38,7 @@ public class ClientConfigNames {
     public static final String BIZ_MAX_THREAD_NUM = "BIZ_MAX_THREAD_NUM";
     // 业务线程池存活时间
     public static final String BIZ_EXTRA_T_ALIVE_SECONDS = "BIZ_EXTRA_T_ALIVE_SECONDS";
-    // 心跳开启
-    public static final String HEARTBEAT_ENABLE = "HEARTBEAT_ENABLE";
 
 
-    // 停机超时时间
-    public static final String SHUTDOWN_TIMEOUT_MILLIS = "SHUTDOWN_TIMEOUT_MILLIS";
-    // 等待响应消息超时时间
-    public static final String WAIT_RESPONSE_MILLIS = "WAIT_RESPONSE_MILLIS";
+
 }
