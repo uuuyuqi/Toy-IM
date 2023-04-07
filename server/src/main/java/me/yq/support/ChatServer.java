@@ -114,7 +114,7 @@ public class ChatServer extends Stateful {
      * @param code 业务码
      * @param processor 处理器，不可以为 null
      */
-    public void registerBizProcessor(BizCode code, RequestProcessor processor) {
+    public void registerBizProcessor(byte code, RequestProcessor processor) {
         if (getCurrentStatus() != Status.NEW)
             throw new IllegalStateException("只有新建状态才可以注册处理器！");
 
@@ -145,9 +145,9 @@ public class ChatServer extends Stateful {
 
     private UserProcessor initUserProcessor() {
         if (useDefaultProcessors){
-            registerBizProcessor(BizCode.Messaging, new MessagingTransferProcessor(this.getSessionMap(),this.config));
-            registerBizProcessor(BizCode.LogInRequest, new LogInProcessor(this.getSessionMap(),this.config));
-            registerBizProcessor(BizCode.LogOutRequest, new LogOutProcessor());
+            registerBizProcessor(BizCode.Messaging.code(), new MessagingTransferProcessor(this.getSessionMap(),this.config));
+            registerBizProcessor(BizCode.LogInRequest.code(), new LogInProcessor(this.getSessionMap(),this.config));
+            registerBizProcessor(BizCode.LogOutRequest.code(), new LogOutProcessor());
         }
         return new UserProcessor(bizThreadPool);
     }

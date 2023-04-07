@@ -93,7 +93,7 @@ public class ChatClient extends Stateful {
      * @param code 业务码
      * @param processor 处理器
      */
-    public void registerBizProcessor(BizCode code, RequestProcessor processor) {
+    public void registerBizProcessor(byte code, RequestProcessor processor) {
         if (getCurrentStatus() != Status.NEW)
             throw new IllegalStateException("只有新建状态才可以注册处理器！");
 
@@ -123,8 +123,8 @@ public class ChatClient extends Stateful {
 
     private UserProcessor initUserProcessor() {
         if (useDefaultProcessors) {
-            registerBizProcessor(BizCode.Messaging, new MessageReceivedProcessor(this));
-            registerBizProcessor(BizCode.Noticing, new NoticeFromServerProcessor(this));
+            registerBizProcessor(BizCode.Messaging.code(), new MessageReceivedProcessor(this));
+            registerBizProcessor(BizCode.Noticing.code(), new NoticeFromServerProcessor(this));
         }
         return new UserProcessor(bizThreadPool);
     }

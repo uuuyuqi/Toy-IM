@@ -4,7 +4,6 @@ import io.netty.channel.ChannelHandlerContext;
 import lombok.extern.slf4j.Slf4j;
 import me.yq.common.BaseRequest;
 import me.yq.common.BaseResponse;
-import me.yq.common.BizCode;
 import me.yq.common.ResponseStatus;
 import me.yq.common.exception.SystemException;
 import me.yq.remoting.command.DefaultRequestCommand;
@@ -32,7 +31,7 @@ public class UserProcessor {
 
     private ThreadPoolExecutor bizThreadPool;
 
-    private final Map<BizCode, RequestProcessor> bizProcessors = new ConcurrentHashMap<>(8);
+    private final Map<Byte, RequestProcessor> bizProcessors = new ConcurrentHashMap<>(8);
 
 
     /**
@@ -46,7 +45,7 @@ public class UserProcessor {
     }
 
 
-    public void registerBizProcessors(BizCode code, RequestProcessor processor) {
+    public void registerBizProcessors(byte code, RequestProcessor processor) {
         RequestProcessor processorOld = this.bizProcessors.put(code, Objects.requireNonNull(processor));
         if (processorOld != null)
             throw new UnsupportedOperationException("不允许重复注册 processors");
@@ -137,7 +136,7 @@ public class UserProcessor {
         return bizThreadPool;
     }
 
-    public Map<BizCode, RequestProcessor> getBizProcessors() {
+    public Map<Byte, RequestProcessor> getBizProcessors() {
         return bizProcessors;
     }
 }
