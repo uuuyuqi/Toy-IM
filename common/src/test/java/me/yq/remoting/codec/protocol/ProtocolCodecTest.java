@@ -55,16 +55,16 @@ class ProtocolCodecTest {
 
         // do test encode  decode
         clientChannel.writeOutbound(requestCommand);
-        assertDoesNotThrow(clientChannel::checkException);
+        assertDoesNotThrow(clientChannel::checkException,"编码后不应该有异常");
         Object sendByClient = clientChannel.outboundMessages().poll();
 
         serverChannel.writeInbound(sendByClient);
-        assertDoesNotThrow(clientChannel::checkException);
+        assertDoesNotThrow(clientChannel::checkException,"解码后不应该有异常");
         Object receivedByServer = serverChannel.inboundMessages().poll();
-        assertNotNull(receivedByServer);
+        assertNotNull(receivedByServer, "解码后不应该为空");
         String result = new String(((DefaultRequestCommand) receivedByServer).getContentBytes(), StandardCharsets.UTF_8);
 
-        assertEquals(testContent, result);
+        assertEquals(testContent, result, "解码后的内容应该和编码前的内容一致");
     }
 
     @Test
@@ -79,18 +79,18 @@ class ProtocolCodecTest {
         }
         clientChannel.flushOutbound();
 
-        assertDoesNotThrow(clientChannel::checkException);
+        assertDoesNotThrow(clientChannel::checkException,"编码后不应该有异常");
         Object[] sendByClient = clientChannel.outboundMessages().toArray();
 
         serverChannel.writeInbound(sendByClient);
-        assertDoesNotThrow(clientChannel::checkException);
+        assertDoesNotThrow(clientChannel::checkException,"解码后不应该有异常");
         Object[] receivedByServer = serverChannel.inboundMessages().toArray();
 
         assertEquals(100, receivedByServer.length);
 
         for (Object o : receivedByServer) {
             String result = new String(((DefaultRequestCommand) o).getContentBytes(), StandardCharsets.UTF_8);
-            assertEquals(testContent, result);
+            assertEquals(testContent, result, "解码后的内容应该和编码前的内容一致");
         }
 
     }
@@ -104,7 +104,7 @@ class ProtocolCodecTest {
 
         // do test encode  decode
         clientChannel.writeOutbound(requestCommand);
-        assertDoesNotThrow(clientChannel::checkException);
+        assertDoesNotThrow(clientChannel::checkException,"编码后不应该有异常");
         Object sendByClient = clientChannel.outboundMessages().poll();
 
         ByteBuf rawBuf = (ByteBuf) sendByClient;
@@ -116,12 +116,12 @@ class ProtocolCodecTest {
 
         serverChannel.writeInbound(slice1);
         serverChannel.writeInbound(slice2);
-        assertDoesNotThrow(clientChannel::checkException);
+        assertDoesNotThrow(clientChannel::checkException,"解码后不应该有异常");
         Object receivedByServer = serverChannel.inboundMessages().poll();
-        assertNotNull(receivedByServer);
+        assertNotNull(receivedByServer, "解码后不应该为空");
         String result = new String(((DefaultRequestCommand) receivedByServer).getContentBytes(), StandardCharsets.UTF_8);
 
-        assertEquals(testContent, result);
+        assertEquals(testContent, result, "解码后的内容应该和编码前的内容一致");
     }
 
 
@@ -136,7 +136,7 @@ class ProtocolCodecTest {
             clientChannel.writeOneOutbound(requestCommand);
         }
         clientChannel.flushOutbound();
-        assertDoesNotThrow(clientChannel::checkException);
+        assertDoesNotThrow(clientChannel::checkException,"编码后不应该有异常");
 
         // collect
         Object[] sendByClient = clientChannel.outboundMessages().toArray();
@@ -152,12 +152,12 @@ class ProtocolCodecTest {
         assertDoesNotThrow(clientChannel::checkException);
         Object[] receivedByServer = serverChannel.inboundMessages().toArray();
 
-        assertEquals(100, receivedByServer.length);
+        assertEquals(100, receivedByServer.length,"应该收到 100 个包");
 
         // check
         for (Object o : receivedByServer) {
             String result = new String(((DefaultRequestCommand) o).getContentBytes(), StandardCharsets.UTF_8);
-            assertEquals(testContent, result);
+            assertEquals(testContent, result, "解码后的内容应该和编码前的内容一致");
         }
 
     }
@@ -176,7 +176,7 @@ class ProtocolCodecTest {
             clientChannel.writeOneOutbound(requestCommand);
         }
         clientChannel.flushOutbound();
-        assertDoesNotThrow(clientChannel::checkException);
+        assertDoesNotThrow(clientChannel::checkException,"编码后不应该有异常");
 
         // collect
         Object[] sendByClient = clientChannel.outboundMessages().toArray();
@@ -201,13 +201,13 @@ class ProtocolCodecTest {
         serverChannel.writeInbound(slice1);
         serverChannel.writeInbound(slice2);
         serverChannel.writeInbound(slice3);
-        assertDoesNotThrow(clientChannel::checkException);
+        assertDoesNotThrow(clientChannel::checkException,"解码后不应该有异常");
         Object[] receivedByServer = serverChannel.inboundMessages().toArray();
 
         // check
         for (Object o : receivedByServer) {
             String result = new String(((DefaultRequestCommand) o).getContentBytes(), StandardCharsets.UTF_8);
-            assertEquals(testContent, result);
+            assertEquals(testContent, result, "解码后的内容应该和编码前的内容一致");
         }
 
     }
