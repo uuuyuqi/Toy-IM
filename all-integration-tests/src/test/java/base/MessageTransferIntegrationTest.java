@@ -46,17 +46,17 @@ public class MessageTransferIntegrationTest {
     public void setUp(){
         // 准备服务端
         serverConfig.putConfig(ServerConfigNames.IDLE_CHECK_ENABLE,"false");
-        server.registerBizProcessor(BizCode.LogInRequest,new LogInProcessor(serverSessionMap, serverConfig));
-        server.registerBizProcessor(BizCode.Messaging,new MessagingTransferProcessor(serverSessionMap, serverConfig));
+        server.registerBizProcessor(BizCode.LogInRequest.code(),new LogInProcessor(serverSessionMap, serverConfig));
+        server.registerBizProcessor(BizCode.Messaging.code(),new MessagingTransferProcessor(serverSessionMap, serverConfig));
         server.start();
 
         // 准备客户端
         clientAConfig.putConfig(ClientConfigNames.HEARTBEAT_ENABLE,"false");
-        spyClientA.registerBizProcessor(BizCode.Messaging,new MessageReceivedProcessor(spyClientA));
+        spyClientA.registerBizProcessor(BizCode.Messaging.code(),new MessageReceivedProcessor(spyClientA));
         spyClientA.start();
 
         clientBConfig.putConfig(ClientConfigNames.HEARTBEAT_ENABLE,"false");
-        spyClientB.registerBizProcessor(BizCode.Messaging,new MessageReceivedProcessor(spyClientB));
+        spyClientB.registerBizProcessor(BizCode.Messaging.code(),new MessageReceivedProcessor(spyClientB));
         spyClientB.start();
 
         // 定义 spy 客户端的行为，转交给真正服务端执行
@@ -67,7 +67,6 @@ public class MessageTransferIntegrationTest {
         assertTrue(serverSessionMap.checkExists(userA.getUserId()),"客户端 A 登录失败");
         assertDoesNotThrow(()->spyClientB.logIn(userB.getUserId(),userB.getPasswd()),"客户端 B 登录不该抛出异常");
 
-        ;
         assertTrue(serverSessionMap.checkExists(userB.getUserId()),"客户端 B 登录失败");
 
     }

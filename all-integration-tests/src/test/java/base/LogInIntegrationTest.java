@@ -47,11 +47,11 @@ public class LogInIntegrationTest {
     @BeforeEach
     public void setUp(){
         serverConfig.putConfig(ServerConfigNames.IDLE_CHECK_ENABLE,"false");
-        server.registerBizProcessor(BizCode.LogInRequest,new LogInProcessor(serverSessionMap,serverConfig));
+        server.registerBizProcessor(BizCode.LogInRequest.code(),new LogInProcessor(serverSessionMap,serverConfig));
         server.start();
 
         clientConfig.putConfig(ClientConfigNames.HEARTBEAT_ENABLE,"false");
-        spyClient.registerBizProcessor(BizCode.Noticing, new NoticeFromServerProcessor(spyClient));
+        spyClient.registerBizProcessor(BizCode.Noticing.code(), new NoticeFromServerProcessor(spyClient));
         spyClient.start();
     }
 
@@ -66,9 +66,7 @@ public class LogInIntegrationTest {
     @Test
     @DisplayName("测试登录成功")
     void testLogIn_success(){
-        assertDoesNotThrow(()->{
-            spyClient.logIn(157146,"abcde");
-        },"应该登录成功，不应该抛出任何异常");
+        assertDoesNotThrow(()-> spyClient.logIn(157146,"abcde"),"应该登录成功，不应该抛出任何异常");
         assertTrue(serverSessionMap.checkExists(157146),"服务端应该保存登录成功的 session");
         assertTrue(spyClient.isOnline(),"客户端应该处于在线状态");
     }
@@ -99,9 +97,7 @@ public class LogInIntegrationTest {
     void testLogIn_fail(){
 
         // 客户端抛异常
-        BusinessException bizException = assertThrows(BusinessException.class, () -> {
-            spyClient.logIn(157146, "abcdex");
-        },"登录失败，应该抛出异常");
+        BusinessException bizException = assertThrows(BusinessException.class, () -> spyClient.logIn(157146, "abcdex"),"登录失败，应该抛出异常");
         assertTrue(bizException.getMessage().contains("用户名或密码错误"),"异常应该包含“用户名或密码错误”");
         assertFalse(spyClient.isOnline(),"客户端不应该处于在线状态");
 
@@ -122,7 +118,7 @@ public class LogInIntegrationTest {
         assertTrue(spyClient.isOnline(),"原端客户端应该处于在线状态");
 
         ChatClient clientNew = new ChatClient(false);
-        clientNew.registerBizProcessor(BizCode.Noticing, new NoticeFromServerProcessor(clientNew));
+        clientNew.registerBizProcessor(BizCode.Noticing.code(), new NoticeFromServerProcessor(clientNew));
         clientNew.start();
         clientNew.logIn(157146,"abcde");
         Session session2 = serverSessionMap.getSession(157146);

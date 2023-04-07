@@ -49,7 +49,7 @@ public class ClientServerConnKeepAliveIntegrationTest {
         // 这个是自定义配置，主要用于本次测试。用于控制是否开关全局阻塞
         // 一旦打开，所有的 channel 都无法接收任何请求，整个服务端如同 hang 住一样
         serverConfig.putConfig(TestConfigNames.BLOCK_ALL_IO_THREADS,"false");
-        server.registerBizProcessor(BizCode.LogInRequest,new LogInProcessor(serverSessionMap,serverConfig));
+        server.registerBizProcessor(BizCode.LogInRequest.code(),new LogInProcessor(serverSessionMap,serverConfig));
 
         server.registerCustomHandlersAhead("blockAllHandler", blockerHandlerSupplier);
 

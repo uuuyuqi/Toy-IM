@@ -35,8 +35,8 @@ public class LogOutIntegrationTest {
     public void setUp(){
         serverConfig.putConfig(ServerConfigNames.IDLE_CHECK_ENABLE,"false");
         serverConfig.putConfig(ServerConfigNames.WAIT_RESPONSE_MILLIS,"3600000");
-        server.registerBizProcessor(BizCode.LogInRequest,new LogInProcessor(serverSessionMap,serverConfig));
-        server.registerBizProcessor(BizCode.LogOutRequest,new LogOutProcessor());
+        server.registerBizProcessor(BizCode.LogInRequest.code(),new LogInProcessor(serverSessionMap,serverConfig));
+        server.registerBizProcessor(BizCode.LogOutRequest.code(),new LogOutProcessor());
         server.start();
 
         clientConfig.putConfig(ClientConfigNames.HEARTBEAT_ENABLE,"false");
