@@ -23,6 +23,8 @@ import me.yq.remoting.utils.NamedThreadFactory;
 import me.yq.support.ChatClient;
 
 import java.net.InetSocketAddress;
+import java.util.LinkedList;
+import java.util.List;
 
 
 @Slf4j
@@ -40,6 +42,10 @@ public class RemotingClient {
             new NamedThreadFactory("Client-Worker", true)
     );
 
+    /**
+     * 额外的处理器，放在所有处理器之前
+     */
+    private final List<ChannelHandler> extendedHandlersAhead = new LinkedList<>();
 
     public RemotingClient(ChatClient chatClient) {
         this.client = chatClient;
@@ -146,13 +152,24 @@ public class RemotingClient {
         serverChannel.attr(ChannelAttributes.HEARTBEAT_COUNT).set(0);
     }
 
+    /**
+     * 检测和服务端是否正常建联
+     * @return 和服务端的长连接异常情况下则返回 false，其他均为 true
+     */
     public boolean hasConnected() {
         return serverSession != null && serverSession.isConnected();
     }
 
 
-    public BaseResponse sendRequest(BaseRequest request) {
+    public BaseResponse sendRequestSync(BaseRequest request) {
         return CommandSendingDelegate.sendRequestSync(
+                this.serverSession.getChannel(),
+                request,
+                client.getConfig().getLong(ClientConfigNames.WAIT_RESPONSE_MILLIS));
+    }
+
+    public void sendRequestOneway(BaseRequest request) {
+        CommandSendingDelegate.sendRequestOneway(
                 this.serverSession.getChannel(),
                 request,
                 client.getConfig().getLong(ClientConfigNames.WAIT_RESPONSE_MILLIS));
