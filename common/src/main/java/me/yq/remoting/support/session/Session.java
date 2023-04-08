@@ -38,6 +38,10 @@ public class Session {
     }
 
 
+    public boolean isConnected(){
+        return channel!=null && channel.isActive();
+    }
+
     public int getSessionId() {
         return sessionId;
     }
