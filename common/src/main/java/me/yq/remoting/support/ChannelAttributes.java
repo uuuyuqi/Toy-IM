@@ -28,9 +28,15 @@ public class ChannelAttributes {
     public final static AttributeKey<Integer> EXPECTED_HEARTBEAT_RESPONSE_ID = AttributeKey.valueOf("EXPECTED_HEARTBEAT_RESPONSE_ID");
 
 
+    /**
+     * 用来表示 channel 的状态 <br/>
+     * 1. CAN_REQUEST：正常状态，可以接收请求<br/>
+     * 2. CANNOT_REQUEST：当前系统不再接收 channel 发来的新请求，但是可以给其发送响应。一般发生在系统停机的时候<br/>
+     * 3. CLOSED：当前 channel 已关闭，当系统发现 channel 处于该状态，可以考虑直接将其优雅关闭
+     */
     public enum ChannelState {
-        CAN_REQUEST, // 正常
-        CANNOT_REQUEST, // 系统正在停机
-        CLOSED, // 当前 channel 已关闭
+        CAN_REQUEST,
+        CANNOT_REQUEST,
+        CLOSED,
     }
 }
