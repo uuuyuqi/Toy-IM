@@ -40,8 +40,8 @@ public class BaseResponse extends BaseTransferObject{
 
     }
 
-    public BaseResponse(ResponseStatus status, String errorMsg, Object appResponse) {
-        super(appResponse);
+    public BaseResponse(ResponseStatus status, String errorMsg, Throwable throwableObj) {
+        super(throwableObj);
         this.status = status;
         this.returnMsg = errorMsg;
     }
