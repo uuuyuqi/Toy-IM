@@ -7,7 +7,7 @@ import me.yq.common.BaseResponse;
 import me.yq.common.ResponseStatus;
 import me.yq.common.exception.BusinessException;
 import me.yq.remoting.command.DefaultResponseCommand;
-import me.yq.test.processors.SimpleBizProcessor;
+import me.yq.test.processors.AllSituationMockProcessor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -36,7 +36,7 @@ class RequestProcessorTest {
     @Mock
     private CommandHandler commandHandler;
 
-    private final RequestProcessor simpleBizProcessor = new SimpleBizProcessor();
+    private final RequestProcessor allSituationMockProcessor = new AllSituationMockProcessor();
 
     private ChannelHandlerContext ctx;
 
@@ -66,7 +66,7 @@ class RequestProcessorTest {
         BaseRequest request = new BaseRequest((byte) 127, situationCode);
         int reqId = 12345;
         Mockito.doAnswer(invocation -> {
-            simpleBizProcessor.processRequest(ctx, reqId, request);
+            allSituationMockProcessor.processRequest(ctx, reqId, request);
             return null;
         }).when(commandHandler).channelRead(Mockito.any(), Mockito.any());
 
