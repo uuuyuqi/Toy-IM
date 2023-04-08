@@ -27,17 +27,20 @@ public abstract class RequestProcessor {
     private final boolean shouldReturn;
 
     /**
-     * 业务处理器前置任务，可以认为时业务处理的扩展点
+     * 业务处理器前置任务，在每次业务请求被处理之前，就会执行这些任务
      */
     private final List<Runnable> preTasks;
 
+    /**
+     * 业务处理器后置任务，等到响应被成功返回给客户端后，才会执行这些任务
+     */
     private final List<Runnable> postTasks;
 
     public RequestProcessor(boolean shouldReturn) {
-        this(shouldReturn,null,null);
+        this(shouldReturn, null, null);
     }
 
-    public RequestProcessor(boolean shouldReturn,List<Runnable> preTasks, List<Runnable> postTasks) {
+    public RequestProcessor(boolean shouldReturn, List<Runnable> preTasks, List<Runnable> postTasks) {
         this.shouldReturn = shouldReturn;
         this.preTasks = preTasks;
         this.postTasks = postTasks;
@@ -64,11 +67,7 @@ public abstract class RequestProcessor {
             channelLocal.set(ctx.channel());
 
             // 2.处理 pre 扩展点
-            if (preTasks != null) {
-                for (Runnable task : preTasks) {
-                    task.run();
-                }
-            }
+            processTasks(preTasks);
 
             // 3.处理业务
             response = doProcess(request);
@@ -77,29 +76,32 @@ public abstract class RequestProcessor {
             if (shouldReturn)
                 response = new BaseResponse(ResponseStatus.FAILED, e.getMessage(), e);
             else
-                throw new SystemException("处理请求[" + request + "]时出现异常！",e);
+                throw new SystemException("处理请求[" + request + "]时出现异常！", e);
 
         } finally {
-            // 4.发送响应
-            if (response == null){
-                throw new RuntimeException("[{"+this.getClass().getSimpleName()+"}]处理完毕后，结果为null");
-            }
+            // 4.清除 threadLocal
+            channelLocal.remove();
+
+            // 5.发送响应
+            if (response == null)
+                throw new RuntimeException("[{" + this.getClass().getSimpleName() + "}]处理完毕后，结果为null");
+
             if (response.getStatus() != ResponseStatus.OK_NO_NEED_RESPONSE)
                 CommandSendingDelegate.sendResponseOneway(ctx, requestId, response);
 
 
-            // 5.处理 post 扩展点
-            if (postTasks != null) {
-                for (Runnable task : postTasks) {
-                    task.run();
-                }
-            }
-
-            // 6.清除 threadLocal
-            channelLocal.remove();
+            // 6.处理 post 扩展点
+            processTasks(postTasks);
         }
     }
 
+    private void processTasks(List<Runnable> tasks){
+        if (tasks != null) {
+            for (Runnable task : tasks) {
+                task.run();
+            }
+        }
+    }
 
     /**
      * 处理业务请求
@@ -107,6 +109,7 @@ public abstract class RequestProcessor {
      * @param request 业务请求
      */
     abstract public BaseResponse doProcess(BaseRequest request);
+
 
     public ThreadLocal<Channel> getChannelLocal() {
         return channelLocal;
