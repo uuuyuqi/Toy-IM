@@ -12,7 +12,7 @@ import me.yq.common.exception.BusinessException;
 import me.yq.common.exception.SystemException;
 import me.yq.remoting.config.Config;
 import me.yq.remoting.config.ServerConfigNames;
-import me.yq.remoting.session.ServerSessionMap;
+import me.yq.remoting.session.SessionMap;
 import me.yq.remoting.transport.CommandSendingDelegate;
 import me.yq.remoting.transport.process.RequestProcessor;
 
@@ -28,20 +28,20 @@ import java.util.List;
 @Slf4j
 public class MessagingTransferProcessor extends RequestProcessor {
 
-    private final ServerSessionMap serverSessionMap;
+    private final SessionMap sessionMap;
 
     private final Config config;
 
 
-    public MessagingTransferProcessor(ServerSessionMap serverSessionMap, Config config) {
+    public MessagingTransferProcessor(SessionMap sessionMap, Config config) {
         super(true);
-        this.serverSessionMap = serverSessionMap;
+        this.sessionMap = sessionMap;
         this.config = config;
     }
 
-    public MessagingTransferProcessor(ServerSessionMap serverSessionMap, Config config, List<Runnable> preTasks, List<Runnable> postTasks) {
+    public MessagingTransferProcessor(SessionMap sessionMap, Config config, List<Runnable> preTasks, List<Runnable> postTasks) {
         super(true,preTasks, postTasks);
-        this.serverSessionMap = serverSessionMap;
+        this.sessionMap = sessionMap;
         this.config = config;
     }
 
@@ -55,7 +55,7 @@ public class MessagingTransferProcessor extends RequestProcessor {
         Message message = (Message) request.getAppRequest();
         User targetUser = message.getToUser();
 
-        boolean online = serverSessionMap.checkExists(targetUser.getUserId());
+        boolean online = sessionMap.checkExists(targetUser.getUserId());
         if (!online) {
             throw new BusinessException("对方用户不在线!");
         }
@@ -79,8 +79,8 @@ public class MessagingTransferProcessor extends RequestProcessor {
      * @return 发送结果
      */
     private BaseResponse sendMessageToTarget(Message message, User targetUser, long timeoutMillis) {
-        Channel targetChannel = serverSessionMap.getUserChannel(targetUser.getUserId());
-        BaseRequest request = new BaseRequest(BizCode.Messaging,message);
+        Channel targetChannel = sessionMap.getUserChannel(targetUser.getUserId());
+        BaseRequest request = new BaseRequest(BizCode.Messaging.code(),message);
         return CommandSendingDelegate.sendRequestSync(targetChannel,request,timeoutMillis);
     }
 }

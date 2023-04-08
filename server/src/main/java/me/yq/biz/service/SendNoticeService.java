@@ -4,7 +4,7 @@ import io.netty.channel.Channel;
 import me.yq.biz.Notice;
 import me.yq.common.BaseRequest;
 import me.yq.common.BizCode;
-import me.yq.remoting.session.ServerSessionMap;
+import me.yq.remoting.session.SessionMap;
 import me.yq.remoting.support.session.Session;
 import me.yq.remoting.transport.CommandSendingDelegate;
 
@@ -23,19 +23,19 @@ public enum SendNoticeService {
     }
 
 
-    private final ServerSessionMap serverSessionMap = ServerSessionMap.getInstanceOrCreate(null);
+    private final SessionMap sessionMap = SessionMap.getInstanceOrCreate(null);
 
     public void sendNotice(String title, String content, long targetUid, long timeoutMillis){
         Notice notice = new Notice(targetUid, title, content);
-        BaseRequest request = new BaseRequest(BizCode.Noticing, notice);
-        Channel channel = serverSessionMap.getUserChannel(targetUid);
+        BaseRequest request = new BaseRequest(BizCode.Noticing.code(), notice);
+        Channel channel = sessionMap.getUserChannel(targetUid);
         CommandSendingDelegate.sendRequestSync(channel,request,timeoutMillis);
     }
 
 
     public void sendNotice(String title, String content, Session session,long timeoutMillis){
         Notice notice = new Notice(session.getUid(), title, content);
-        BaseRequest request = new BaseRequest(BizCode.Noticing, notice);
+        BaseRequest request = new BaseRequest(BizCode.Noticing.code(), notice);
         Channel channel = session.getChannel();
         CommandSendingDelegate.sendRequestSync(channel,request,timeoutMillis);
     }

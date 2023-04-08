@@ -6,7 +6,7 @@ import me.yq.remoting.config.*;
 import me.yq.remoting.processor.LogInProcessor;
 import me.yq.remoting.processor.MessageReceivedProcessor;
 import me.yq.remoting.processor.MessagingTransferProcessor;
-import me.yq.remoting.session.ServerSessionMap;
+import me.yq.remoting.session.SessionMap;
 import me.yq.remoting.utils.CommonUtils;
 import me.yq.support.ChatClient;
 import me.yq.support.ChatServer;
@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class MessageTransferIntegrationTest {
     private final Config serverConfig = new DefaultServerConfig();
     private final ChatServer server = new ChatServer(false, serverConfig);
-    private final ServerSessionMap serverSessionMap = server.getSessionMap();
+    private final SessionMap sessionMap = server.getSessionMap();
 
     private final Config clientAConfig = new DefaultClientConfig();
     private final Config clientBConfig = new DefaultClientConfig();
@@ -46,8 +46,8 @@ public class MessageTransferIntegrationTest {
     public void setUp(){
         // 准备服务端
         serverConfig.putConfig(ServerConfigNames.IDLE_CHECK_ENABLE,"false");
-        server.registerBizProcessor(BizCode.LogInRequest.code(),new LogInProcessor(serverSessionMap, serverConfig));
-        server.registerBizProcessor(BizCode.Messaging.code(),new MessagingTransferProcessor(serverSessionMap, serverConfig));
+        server.registerBizProcessor(BizCode.LogInRequest.code(),new LogInProcessor(sessionMap, serverConfig));
+        server.registerBizProcessor(BizCode.Messaging.code(),new MessagingTransferProcessor(sessionMap, serverConfig));
         server.start();
 
         // 准备客户端
@@ -64,10 +64,10 @@ public class MessageTransferIntegrationTest {
 
         // 让两个客户端先登录并连接到服务端
         assertDoesNotThrow(()->spyClientA.logIn(userA.getUserId(),userA.getPasswd()),"客户端 A 登录不该抛出异常");
-        assertTrue(serverSessionMap.checkExists(userA.getUserId()),"客户端 A 登录失败");
+        assertTrue(sessionMap.checkExists(userA.getUserId()),"客户端 A 登录失败");
         assertDoesNotThrow(()->spyClientB.logIn(userB.getUserId(),userB.getPasswd()),"客户端 B 登录不该抛出异常");
 
-        assertTrue(serverSessionMap.checkExists(userB.getUserId()),"客户端 B 登录失败");
+        assertTrue(sessionMap.checkExists(userB.getUserId()),"客户端 B 登录失败");
 
     }
 

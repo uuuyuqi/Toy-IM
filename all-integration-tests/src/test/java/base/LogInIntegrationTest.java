@@ -7,7 +7,7 @@ import me.yq.common.exception.BusinessException;
 import me.yq.remoting.config.*;
 import me.yq.remoting.processor.LogInProcessor;
 import me.yq.remoting.processor.NoticeFromServerProcessor;
-import me.yq.remoting.session.ServerSessionMap;
+import me.yq.remoting.session.SessionMap;
 import me.yq.remoting.support.session.Session;
 import me.yq.support.ChatClient;
 import me.yq.support.ChatServer;
@@ -42,12 +42,12 @@ public class LogInIntegrationTest {
     // spy 的方式测试 功能点5 是否收到安全警告
     private final ChatClient spyClient = Mockito.spy(new ChatClient(false,clientConfig));
 
-    private final ServerSessionMap serverSessionMap = server.getSessionMap();
+    private final SessionMap sessionMap = server.getSessionMap();
 
     @BeforeEach
     public void setUp(){
         serverConfig.putConfig(ServerConfigNames.IDLE_CHECK_ENABLE,"false");
-        server.registerBizProcessor(BizCode.LogInRequest.code(),new LogInProcessor(serverSessionMap,serverConfig));
+        server.registerBizProcessor(BizCode.LogInRequest.code(),new LogInProcessor(sessionMap,serverConfig));
         server.start();
 
         clientConfig.putConfig(ClientConfigNames.HEARTBEAT_ENABLE,"false");
@@ -67,7 +67,7 @@ public class LogInIntegrationTest {
     @DisplayName("测试登录成功")
     void testLogIn_success(){
         assertDoesNotThrow(()-> spyClient.logIn(157146,"abcde"),"应该登录成功，不应该抛出任何异常");
-        assertTrue(serverSessionMap.checkExists(157146),"服务端应该保存登录成功的 session");
+        assertTrue(sessionMap.checkExists(157146),"服务端应该保存登录成功的 session");
         assertTrue(spyClient.isOnline(),"客户端应该处于在线状态");
     }
 
@@ -77,7 +77,7 @@ public class LogInIntegrationTest {
     @DisplayName("测试登录成功后，能获取到 user 基本信息")
     void testLogIn_success_getUserInfo(){
         assertDoesNotThrow(()->spyClient.logIn(157146,"abcde"),"登录时不该抛出业务异常");
-        assertTrue(serverSessionMap.checkExists(157146),"登录失败");
+        assertTrue(sessionMap.checkExists(157146),"登录失败");
 
 
         User currentUser = spyClient.getCurrentUser();
@@ -102,7 +102,7 @@ public class LogInIntegrationTest {
         assertFalse(spyClient.isOnline(),"客户端不应该处于在线状态");
 
         // 服务端不保存 session
-        assertFalse(serverSessionMap.checkExists(157146),"服务端不应该保存登录失败的 session");
+        assertFalse(sessionMap.checkExists(157146),"服务端不应该保存登录失败的 session");
     }
 
 
@@ -113,7 +113,7 @@ public class LogInIntegrationTest {
 
         assertDoesNotThrow(()->spyClient.logIn(157146,"abcde"),"登录时不该抛出业务异常");
 
-        Session session1 = serverSessionMap.getSession(157146);
+        Session session1 = sessionMap.getSession(157146);
         assertNotNull(session1,"原端登录成功");
         assertTrue(spyClient.isOnline(),"原端客户端应该处于在线状态");
 
@@ -121,7 +121,7 @@ public class LogInIntegrationTest {
         clientNew.registerBizProcessor(BizCode.Noticing.code(), new NoticeFromServerProcessor(clientNew));
         clientNew.start();
         clientNew.logIn(157146,"abcde");
-        Session session2 = serverSessionMap.getSession(157146);
+        Session session2 = sessionMap.getSession(157146);
         assertNotNull(session2,"另一端登录成功");
         assertTrue(clientNew.isOnline(),"另一端客户端应该处于在线状态");
 

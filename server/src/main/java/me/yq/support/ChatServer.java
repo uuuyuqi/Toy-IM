@@ -11,7 +11,7 @@ import me.yq.remoting.config.ServerConfigNames;
 import me.yq.remoting.processor.LogInProcessor;
 import me.yq.remoting.processor.LogOutProcessor;
 import me.yq.remoting.processor.MessagingTransferProcessor;
-import me.yq.remoting.session.ServerSessionMap;
+import me.yq.remoting.session.SessionMap;
 import me.yq.remoting.transport.process.RequestProcessor;
 import me.yq.remoting.transport.process.UserProcessor;
 import me.yq.remoting.utils.NamedThreadFactory;
@@ -46,7 +46,7 @@ public class ChatServer extends Stateful {
 
     private final UserProcessor userProcessor;
 
-    private final ServerSessionMap sessionMap;
+    private final SessionMap sessionMap;
 
 
     /**
@@ -101,7 +101,7 @@ public class ChatServer extends Stateful {
     public ChatServer(boolean useDefaultProcessors,Config config) {
         this.useDefaultProcessors = useDefaultProcessors;
         this.config = Objects.requireNonNull(config);
-        this.sessionMap = ServerSessionMap.getInstanceOrCreate(config);
+        this.sessionMap = SessionMap.getInstanceOrCreate(config);
         this.bizThreadPool = initBizThreadPool();
         this.userProcessor = initUserProcessor();
         this.remotingServer = initRemoting();
@@ -214,7 +214,7 @@ public class ChatServer extends Stateful {
     }
 
 
-    public ServerSessionMap getSessionMap(){
+    public SessionMap getSessionMap(){
         return this.sessionMap;
     }
 

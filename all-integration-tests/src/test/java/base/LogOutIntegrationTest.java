@@ -4,7 +4,7 @@ import me.yq.common.BizCode;
 import me.yq.remoting.config.*;
 import me.yq.remoting.processor.LogInProcessor;
 import me.yq.remoting.processor.LogOutProcessor;
-import me.yq.remoting.session.ServerSessionMap;
+import me.yq.remoting.session.SessionMap;
 import me.yq.support.ChatClient;
 import me.yq.support.ChatServer;
 import org.junit.jupiter.api.AfterEach;
@@ -28,14 +28,14 @@ public class LogOutIntegrationTest {
     private final ChatServer server = new ChatServer(false,serverConfig);
     private final ChatClient client = new ChatClient(false,clientConfig);
 
-    private final ServerSessionMap serverSessionMap = server.getSessionMap();
+    private final SessionMap sessionMap = server.getSessionMap();
 
 
     @BeforeEach
     public void setUp(){
         serverConfig.putConfig(ServerConfigNames.IDLE_CHECK_ENABLE,"false");
         serverConfig.putConfig(ServerConfigNames.WAIT_RESPONSE_MILLIS,"3600000");
-        server.registerBizProcessor(BizCode.LogInRequest.code(),new LogInProcessor(serverSessionMap,serverConfig));
+        server.registerBizProcessor(BizCode.LogInRequest.code(),new LogInProcessor(sessionMap,serverConfig));
         server.registerBizProcessor(BizCode.LogOutRequest.code(),new LogOutProcessor());
         server.start();
 
@@ -58,11 +58,11 @@ public class LogOutIntegrationTest {
     void test_LogOut(){
         assertDoesNotThrow(()->client.logIn(157146,"abcde"),"登录时不该抛出业务异常");
         assertTrue(client.isOnline(),"登录成功后，客户端应该处于在线状态");
-        assertTrue(serverSessionMap.checkExists(157146),"登录成功后，服务端应该能查询到该 session");
+        assertTrue(sessionMap.checkExists(157146),"登录成功后，服务端应该能查询到该 session");
 
         assertDoesNotThrow(()->client.logOut(157146),"注销时不该抛出业务异常");
         assertFalse(client.isOnline(),"注销后，客户端不应该处于在线状态");
-        assertFalse(serverSessionMap.checkExists(157146),"注销后，服务端不应该能查询到该 session");
+        assertFalse(sessionMap.checkExists(157146),"注销后，服务端不应该能查询到该 session");
     }
 
 
@@ -78,10 +78,10 @@ public class LogOutIntegrationTest {
 
         assertDoesNotThrow(()->clientToClose.logIn(157146,"abcde"),"登录时不该抛出业务异常");
         assertTrue(clientToClose.isOnline(),"登录成功后，客户端应该处于在线状态");
-        assertTrue(serverSessionMap.checkExists(157146),"登录成功后，服务端应该能查询到该 session");
+        assertTrue(sessionMap.checkExists(157146),"登录成功后，服务端应该能查询到该 session");
 
         clientToClose.shutdown();
         assertFalse(clientToClose.isOnline(),"客户端直接关闭后，客户端不应该处于在线状态");
-        assertFalse(serverSessionMap.checkExists(157146),"客户端直接关闭后，服务端不应该能查询到该 session");
+        assertFalse(sessionMap.checkExists(157146),"客户端直接关闭后，服务端不应该能查询到该 session");
     }
 }

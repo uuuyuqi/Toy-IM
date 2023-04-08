@@ -6,7 +6,7 @@ import me.yq.biz.domain.User;
 import me.yq.common.BaseRequest;
 import me.yq.common.BaseResponse;
 import me.yq.common.ResponseStatus;
-import me.yq.remoting.session.ServerSessionMap;
+import me.yq.remoting.session.SessionMap;
 import me.yq.remoting.transport.process.RequestProcessor;
 
 import java.util.List;
@@ -20,7 +20,7 @@ import java.util.List;
 @Slf4j
 public class LogOutProcessor extends RequestProcessor {
 
-    private final ServerSessionMap serverSessionMap = ServerSessionMap.getInstanceOrCreate(null);
+    private final SessionMap sessionMap = SessionMap.getInstanceOrCreate(null);
 
     public LogOutProcessor() {
         super(false);
@@ -37,7 +37,7 @@ public class LogOutProcessor extends RequestProcessor {
         LogOutRequest logOutRequest = (LogOutRequest) request.getAppRequest();
         User user = logOutRequest.getUser();
 
-        serverSessionMap.removeSessionSafe(user.getUserId());
+        sessionMap.removeSessionSafe(user.getUserId());
         log.info("用户{}已经下线", user.getUserId());
 
         // 关闭 channel

@@ -6,7 +6,7 @@ import io.netty.channel.ChannelHandler;
 import me.yq.common.BizCode;
 import me.yq.remoting.config.*;
 import me.yq.remoting.processor.LogInProcessor;
-import me.yq.remoting.session.ServerSessionMap;
+import me.yq.remoting.session.SessionMap;
 import me.yq.remoting.support.ChannelAttributes;
 import me.yq.support.ChatClient;
 import me.yq.support.ChatServer;
@@ -36,7 +36,7 @@ public class ClientServerConnKeepAliveIntegrationTest {
     private final ChatServer server = new ChatServer(false,serverConfig);
     private final ChatClient client = new ChatClient(false,clientConfig);
 
-    private final ServerSessionMap serverSessionMap = server.getSessionMap();
+    private final SessionMap sessionMap = server.getSessionMap();
 
     /**
      * 可以阻塞一切 IO 请求的 handler，用于模拟服务端阻塞的情况
@@ -49,7 +49,7 @@ public class ClientServerConnKeepAliveIntegrationTest {
         // 这个是自定义配置，主要用于本次测试。用于控制是否开关全局阻塞
         // 一旦打开，所有的 channel 都无法接收任何请求，整个服务端如同 hang 住一样
         serverConfig.putConfig(TestConfigNames.BLOCK_ALL_IO_THREADS,"false");
-        server.registerBizProcessor(BizCode.LogInRequest.code(),new LogInProcessor(serverSessionMap,serverConfig));
+        server.registerBizProcessor(BizCode.LogInRequest.code(),new LogInProcessor(sessionMap,serverConfig));
 
         server.registerCustomHandlersAhead("blockAllHandler", blockerHandlerSupplier);
 
@@ -70,7 +70,7 @@ public class ClientServerConnKeepAliveIntegrationTest {
         startWithDiffIdleConfig(false,true);
 
         assertDoesNotThrow(() -> client.logIn(157146, "abcde"),"登录时不该抛出业务异常");
-        assertTrue(serverSessionMap.checkExists(157146));
+        assertTrue(sessionMap.checkExists(157146));
         assertTrue(client.isOnline(),"客户端应该处于在线状态");
 
         // 开启全局阻塞，模拟服务端 hang 住
@@ -97,7 +97,7 @@ public class ClientServerConnKeepAliveIntegrationTest {
 
 
         assertDoesNotThrow(() -> client.logIn(157146, "abcde"),"登录时不该抛出业务异常");
-        assertTrue(serverSessionMap.checkExists(157146));
+        assertTrue(sessionMap.checkExists(157146));
         assertTrue(client.isOnline(),"客户端应该处于在线状态");
 
 
@@ -111,7 +111,7 @@ public class ClientServerConnKeepAliveIntegrationTest {
                 client.getServerSession().getChannel().attr(ChannelAttributes.HEARTBEAT_COUNT).get() <= 1 ,
                 "此时会发生心跳，但是由于服务端不断响应 ack，心跳计数应该不超过 1");
         assertTrue(client.isOnline(),"客户端应该处于离线状态");
-        assertTrue(serverSessionMap.checkExists(157146),"服务端会话应该还存在");
+        assertTrue(sessionMap.checkExists(157146),"服务端会话应该还存在");
     }
 
 
@@ -123,12 +123,12 @@ public class ClientServerConnKeepAliveIntegrationTest {
         startWithDiffIdleConfig(true, false);
 
         assertDoesNotThrow(() -> client.logIn(157146, "abcde"),"登录时不该抛出业务异常");
-        assertTrue(serverSessionMap.checkExists(157146));
+        assertTrue(sessionMap.checkExists(157146));
         assertTrue(client.isOnline(), "客户端应该处于在线状态");
 
         TimeUnit.SECONDS.sleep(serverConfig.getLong(ServerConfigNames.CLIENT_TIMEOUT_SECONDS) + 1);
 
-        assertFalse(serverSessionMap.checkExists(157146),"服务端会话应该被清理");
+        assertFalse(sessionMap.checkExists(157146),"服务端会话应该被清理");
         assertFalse(client.isOnline(),"客户端应该处于离线状态");
     }
 
