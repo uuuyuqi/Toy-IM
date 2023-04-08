@@ -9,13 +9,25 @@ package me.yq.biz;
 public class Notice {
     private final long acceptId;
 
-    private final String noticeTitle;
+    private String noticeTitle;
 
-    private final String noticeContent;
+    private String noticeContent;
 
     public Notice(long acceptId, String noticeTitle, String noticeContent) {
         this.acceptId = acceptId;
         this.noticeTitle = noticeTitle;
+        this.noticeContent = noticeContent;
+    }
+
+    public Notice(long acceptId) {
+        this.acceptId = acceptId;
+    }
+
+    public void setNoticeTitle(String noticeTitle) {
+        this.noticeTitle = noticeTitle;
+    }
+
+    public void setNoticeContent(String noticeContent) {
         this.noticeContent = noticeContent;
     }
 
