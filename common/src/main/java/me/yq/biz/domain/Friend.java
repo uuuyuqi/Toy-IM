@@ -45,4 +45,8 @@ public class Friend {
     public String toString() {
         return name + "(" + friendId +")";
     }
+
+    public Friend copy() {
+        return new Friend(friendId, name);
+    }
 }

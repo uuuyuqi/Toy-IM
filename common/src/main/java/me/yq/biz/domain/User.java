@@ -3,6 +3,7 @@ package me.yq.biz.domain;
 import lombok.Getter;
 
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
@@ -126,5 +127,22 @@ public class User {
     @Override
     public String toString() {
         return name + "(" + userId +")";
+    }
+
+
+    public User copy(){
+        User user = new User();
+        user.setUserId(this.userId);
+        user.setPasswd(this.passwd);
+        user.setName(this.name);
+        user.setAge(this.age);
+        user.setAddress(this.address);
+        user.setSignature(this.signature);
+        List<Friend> friendList = new LinkedList<>();
+        for (Friend friend : this.friendList) {
+            friendList.add(friend.copy());
+        }
+        user.setFriendList(friendList);
+        return user;
     }
 }
