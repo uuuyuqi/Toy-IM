@@ -20,7 +20,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * requestProcessor 聚合对象，负责接收业务层数据，选择合适的业务处理器，并进行业务的处理
+ * requestProcessor 聚合对象，持有业务处理器和对应业务码的映射。
+ * 可以统一对外接收业务层数据，根据业务数据携带的业务码，选择出合适的业务处理器，进行业务的处理
  *
  * @author yq
  * @version v1.0 2023-03-28 20:29
@@ -85,9 +86,13 @@ public class UserProcessor {
                 || channelState == ChannelAttributes.ChannelState.CAN_REQUEST) {
             this.bizThreadPool.execute(() -> {
                 // 每次处理请求时，请求计数+1
-                this.currentRequestCounts.incrementAndGet();
-                doProcessRequest(ctx, requestCommand);
-                this.currentRequestCounts.decrementAndGet();
+                try{
+                    this.currentRequestCounts.incrementAndGet();
+                    doProcessRequest(ctx, requestCommand);
+                }finally {
+                    this.currentRequestCounts.decrementAndGet();
+                }
+
             });
         }
     }
