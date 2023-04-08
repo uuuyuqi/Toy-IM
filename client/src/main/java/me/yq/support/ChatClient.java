@@ -186,7 +186,7 @@ public class ChatClient extends Stateful {
             LogInRequest logInRequest = new LogInRequest();
             logInRequest.setUser(new User(userId, passwd));
 
-            BaseRequest request = new BaseRequest(BizCode.LogInRequest, logInRequest);
+            BaseRequest request = new BaseRequest(BizCode.LogInRequest.code(), logInRequest);
             BaseResponse response = remotingClient.sendRequestSync(request);
 
             if (response.getStatus() != ResponseStatus.SUCCESS)
@@ -218,7 +218,7 @@ public class ChatClient extends Stateful {
         LogOutRequest logOutRequest = new LogOutRequest();
         logOutRequest.setUser(new User(userId));
 
-        BaseRequest request = new BaseRequest(BizCode.LogOutRequest, logOutRequest);
+        BaseRequest request = new BaseRequest(BizCode.LogOutRequest.code(), logOutRequest);
         remotingClient.sendRequestOneway(request);
 
         this.setOnlineFlag(false);
@@ -240,7 +240,7 @@ public class ChatClient extends Stateful {
         User to = new User(targetUserId);
         Message message = new Message(from, to, msg);
 
-        BaseRequest request = new BaseRequest(BizCode.Messaging, message);
+        BaseRequest request = new BaseRequest(BizCode.Messaging.code(), message);
 
         BaseResponse baseResponse = this.remotingClient.sendRequestSync(request);
         if (baseResponse == null)

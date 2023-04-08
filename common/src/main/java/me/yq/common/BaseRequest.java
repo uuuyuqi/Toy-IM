@@ -6,14 +6,14 @@ package me.yq.common;
  * @version v1.0 2023-02-16 10:54 AM
  */
 public class BaseRequest extends BaseTransferObject{
-    private final BizCode bizCode;
+    private final byte bizCode;
 
-    public BaseRequest(BizCode bizCode, Object appRequest) {
+    public BaseRequest(byte bizCode, Object appRequest) {
         super(appRequest);
         this.bizCode = bizCode;
     }
 
-    public BizCode getBizCode() {
+    public byte getBizCode() {
         return bizCode;
     }
 
