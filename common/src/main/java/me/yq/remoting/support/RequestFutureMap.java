@@ -138,7 +138,7 @@ public final class RequestFutureMap {
         long time = System.currentTimeMillis();
 
         while (System.currentTimeMillis() - time > timeoutMillis) {
-            if (!hasFuture()) {
+            if (!hasRequestFuture()) {
                 log.debug("当前已发起的任务均在限定时间内执行完毕!");
                 break;
             }
@@ -156,7 +156,7 @@ public final class RequestFutureMap {
      * 不安全地强行删除所有任务，此时对于发出去的请求，其结果会被 io 线程丢弃。参考： {@link CommandHandler#channelRead(io.netty.channel.ChannelHandlerContext, java.lang.Object)}
      */
     private void unsafeRemoveAll() {
-        if (hasFuture())
+        if (hasRequestFuture())
             log.warn("当前仍存有未执行完的任务，现在已准备强行清除!");
         this.futureMap.clear();
     }
@@ -167,7 +167,7 @@ public final class RequestFutureMap {
      *
      * @return 如果当前有正在处理的请求，则返回 true
      */
-    public boolean hasFuture() {
+    public boolean hasRequestFuture() {
         return futureMap.size() > 0;
     }
 
