@@ -62,13 +62,14 @@ public abstract class RequestProcessor {
     public void processRequest(ChannelHandlerContext ctx, int requestId, BaseRequest request) {
 
         BaseResponse response = null;
+
+        // 1.将 channel 信息放入 threadLocal 中
+        channelLocal.set(ctx.channel());
+
+        // 2.处理 pre 扩展点
+        processTasks(preTasks);
+
         try {
-            // 1.将 channel 信息放入 threadLocal 中
-            channelLocal.set(ctx.channel());
-
-            // 2.处理 pre 扩展点
-            processTasks(preTasks);
-
             // 3.处理业务
             response = doProcess(request);
 
@@ -81,18 +82,18 @@ public abstract class RequestProcessor {
         } finally {
             // 4.清除 threadLocal
             channelLocal.remove();
-
-            // 5.发送响应
-            if (response == null)
-                throw new RuntimeException("[{" + this.getClass().getSimpleName() + "}]处理完毕后，结果为null");
-
-            if (response.getStatus() != ResponseStatus.OK_NO_NEED_RESPONSE)
-                CommandSendingDelegate.sendResponseOneway(ctx, requestId, response);
-
-
-            // 6.处理 post 扩展点
-            processTasks(postTasks);
         }
+
+        // 5.发送响应
+        if (response == null)
+            throw new RuntimeException("[{" + this.getClass().getSimpleName() + "}]处理完毕后，结果为null");
+
+        if (response.getStatus() != ResponseStatus.OK_NO_NEED_RESPONSE)
+            CommandSendingDelegate.sendResponseOneway(ctx, requestId, response);
+
+
+        // 6.处理 post 扩展点
+        processTasks(postTasks);
     }
 
     private void processTasks(List<Runnable> tasks){
