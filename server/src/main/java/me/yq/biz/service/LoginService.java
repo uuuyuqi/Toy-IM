@@ -22,7 +22,7 @@ public enum LoginService {
     //@Autowired
     private final UserDao userDao = new UserDao();
 
-    public void login(User user){
+    public User login(User user){
 
         User userFound = userDao.findUser(user);
         if (userFound == null){
@@ -34,6 +34,9 @@ public enum LoginService {
             log.error("用户名或密码错误！登录失败！");
             throw new RuntimeException("用户名或密码错误！");
         }
+        // 登录成功后，将密码到的用户密码置空
+        userFound.setPasswd(null);
+        return userFound;
     }
 
 }
