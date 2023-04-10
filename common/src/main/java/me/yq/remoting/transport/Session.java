@@ -1,9 +1,8 @@
-package me.yq.remoting.support.session;
+package me.yq.remoting.transport;
 
 
 import io.netty.channel.Channel;
 import me.yq.remoting.support.ChannelAttributes;
-import me.yq.remoting.support.RequestFutureMap;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;

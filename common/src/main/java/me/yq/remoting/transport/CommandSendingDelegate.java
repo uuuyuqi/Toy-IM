@@ -5,17 +5,16 @@ import io.netty.channel.ChannelHandlerContext;
 import lombok.extern.slf4j.Slf4j;
 import me.yq.common.BaseRequest;
 import me.yq.common.BaseResponse;
-import me.yq.common.ResponseStatus;
+import me.yq.common.BaseResponseFuture;
 import me.yq.common.exception.SystemException;
 import me.yq.remoting.command.DefaultRequestCommand;
 import me.yq.remoting.command.DefaultResponseCommand;
 import me.yq.remoting.support.ChannelAttributes;
-import me.yq.remoting.support.RequestFutureMap;
-import me.yq.remoting.utils.CommonUtils;
 
-import java.util.Date;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**
@@ -33,60 +32,102 @@ public class CommandSendingDelegate {
      */
     private static final ThreadLocal<SendState> SEND_SUCCESS_RECORD = ThreadLocal.withInitial(SendState::new);
 
+    /**
+     * 后台调度线程池，专用于监控异步调用的情况下，请求是否超时
+     */
+    private static final ScheduledExecutorService Timer = new ScheduledThreadPoolExecutor(1);
+
 
     //================== 发送请求 ==================
-
     /**
-     * 同步发送请求
+     * 同步发送请求，实际上是对异步调用的改造，手工在这里等待。
      *
-     * @param channel 接收消息的 channel
-     * @param request 待发送的业务信息
+     * @param channel       接收消息的 channel
+     * @param request       待发送的业务信息
+     * @param timeoutMillis 等待响应超时时间
      * @return 响应数据
      */
     public static BaseResponse sendRequestSync(Channel channel, BaseRequest request, long timeoutMillis) {
-        ensureChannelHealthy(channel);
+        RequestFuture future = internalSendRequestForFuture(channel, request);
 
-        DefaultResponseCommand responseCommand = sendRequestSync0(channel, wrapSerializedRequestCommand(request), timeoutMillis);
+        DefaultResponseCommand responseCommand = future.waitAndGetResponse(timeoutMillis);
+
         if (responseCommand == null)
             return null;
 
-        responseCommand.deserialize(); // 反序列化
+        responseCommand.deserialize();
         return responseCommand.getAppResponse();
+    }
+
+    public static BaseResponseFuture sendRequestAsync(Channel channel, BaseRequest request) {
+        RequestFuture future = internalSendRequestForFuture(channel, request);
+        return new BaseResponseFuture(future);
     }
 
 
     /**
-     * 同步发送消息内部处理，在该方法中，会将请求序列化，并发送到远程端。
-     * 此外，请求的基本信息会记录在 channel 的 futureMap 中，以便在接收到响应时，能够找到对应的请求。
+     * 异步发送请求。在该方法中，会将请求序列化，并发送到远程端。
+     * 发出的请求会放在 channel attr 中，等待响应到来之时，会将响应提交，并告诉 biz thread 去处理 callback。
      *
-     * @param channel        待接收请求的 channel
-     * @param requestCommand 待发送的请求
-     * @param timeoutMillis  等待响应超时时间
-     * @return 响应数据
+     * @param channel       接收消息的 channel
+     * @param request       待发送的业务信息
+     * @param timeoutMillis 等待响应超时时间，为 -1 表示用不超时
+     * @param callback      回调函数
      */
-    private static DefaultResponseCommand sendRequestSync0(Channel channel, DefaultRequestCommand requestCommand, long timeoutMillis) {
+    public static void sendRequestCallback(Channel channel, BaseRequest request, long timeoutMillis, Callback callback) {
 
-        // record request
+        RequestFuture future = internalSendRequestForFuture(channel, request);
+
+        // 提交超时检测任务
+        ScheduledFuture<?> scheduledFuture = Timer.schedule(() -> {
+            // 超时前再确认下是否已经有响应了
+            DefaultResponseCommand responseCommand = future.waitAndGetResponse(0);
+            if (responseCommand == null)
+                callback.onTimeout();
+
+        }, timeoutMillis, TimeUnit.MILLISECONDS);
+
+        future.setScheduledFuture(scheduledFuture);
+
+    }
+
+
+    /**
+     * 该方法是内部的核心工具方法。用途是发送请求，并获取请求的 future，该方法可以供业务层调用并获取 future，
+     * future 方式调用和 sync 调用都依赖了本方法。可参考 {@link #sendRequestSync} 和 {@link #sendRequestCallback}
+     *
+     *
+     * @param channel 待发送请求的 channel
+     * @param request 待发送的请求
+     * @return 请求的 future
+     */
+    private static RequestFuture internalSendRequestForFuture(Channel channel, BaseRequest request) {
+        ensureChannelHealthy(channel);
+
+        DefaultRequestCommand requestCommand = wrapSerializedRequestCommand(request);
         int requestId = requestCommand.getMessageId();
+        RequestFuture future = new RequestFuture(requestId);
         RequestFutureMap futureMapInChannel = channel.attr(ChannelAttributes.CHANNEL_REQUEST_FUTURE_MAP).get();
-        futureMapInChannel.addNewFuture(requestId);
+        futureMapInChannel.addNewFuture(future);
 
         try {
             channel.writeAndFlush(requestCommand).addListener(
-                    future -> {
-                        if (!future.isSuccess()) {
-                            String errMsg = "消息发送失败!  异常信息： " + future.cause().getMessage();
-                            futureMapInChannel.commitFailedResponseCommand(requestId, future.cause());
+                    f -> {
+                        if (!f.isSuccess()) {
+                            String errMsg = "消息发送失败!  异常信息： " + f.cause().getMessage();
+                            // todo 构思好怎么构建异常，放到 future 中，是序列化后的还是序列化前的？
+                            //  到底在哪里进行反序列化？
+                            future.putFailedResponse(f.cause());
                             throw new SystemException(errMsg);
                         }
                     }
             );
         } catch (Exception e) {
-            futureMapInChannel.commitFailedResponseCommand(requestId, e);
+            future.putFailedResponse(e);
         }
-
-        return futureMapInChannel.takeResponseCommand(requestId, timeoutMillis);
+        return future;
     }
+
 
 
     /**
@@ -103,17 +144,16 @@ public class CommandSendingDelegate {
         channel.writeAndFlush(wrapSerializedRequestCommand(request)).addListener(
                 future -> {
                     if (!future.isSuccess()) {
-                        String errMsg = "消息发送失败!  异常信息： " + future.cause().getMessage();
                         sendState.setState(SendStates.FAILED);
                         sendState.setThrowable(future.cause());
-                    }else
+                    } else
                         sendState.setState(SendStates.SUCCESS);
                 }
         );
 
         // 不停等待10ms 直到超时或者发送状态是成功
         long start = System.currentTimeMillis();
-        while (System.currentTimeMillis() - start < timeoutMillis ) {
+        while (System.currentTimeMillis() - start < timeoutMillis) {
             if (sendState.getState() == SendStates.SUCCESS)
                 return;
             try {
@@ -122,11 +162,11 @@ public class CommandSendingDelegate {
             }
         }
 
-        if (sendState.getState() == SendStates.FAILED){
+        if (sendState.getState() == SendStates.FAILED) {
             String errMsg = "发送消息失败：[" + request.getAppRequest() + "]\n异常信息：" + sendState.getThrowable().getMessage();
             log.error(errMsg);
-            throw new SystemException(errMsg,sendState.getThrowable());
-        }else if (sendState.getState() == SendStates.SENT){
+            throw new SystemException(errMsg, sendState.getThrowable());
+        } else if (sendState.getState() == SendStates.SENT) {
             String errMsg = "发送消息超时：[" + request.getAppRequest() + "]";
             log.error(errMsg);
             throw new SystemException(errMsg);

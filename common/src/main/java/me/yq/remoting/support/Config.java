@@ -1,4 +1,4 @@
-package me.yq.remoting.config;
+package me.yq.remoting.support;
 
 import me.yq.remoting.utils.StringUtils;
 

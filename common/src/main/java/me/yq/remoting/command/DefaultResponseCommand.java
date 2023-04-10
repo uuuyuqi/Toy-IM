@@ -13,6 +13,8 @@ public class DefaultResponseCommand extends RemotingCommand{
 
     private BaseResponse appResponse;
 
+    private Throwable throwable;
+
     public DefaultResponseCommand() {
         super(CommandCode.Biz_Response);
     }
@@ -61,5 +63,13 @@ public class DefaultResponseCommand extends RemotingCommand{
 
     public void setAppResponse(BaseResponse appResponse) {
         this.appResponse = appResponse;
+    }
+
+    public Throwable getThrowable() {
+        return throwable;
+    }
+
+    public void setThrowable(Throwable throwable) {
+        this.throwable = throwable;
     }
 }

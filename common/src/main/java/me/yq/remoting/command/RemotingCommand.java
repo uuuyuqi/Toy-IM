@@ -1,8 +1,8 @@
 package me.yq.remoting.command;
 
 import me.yq.common.exception.SystemException;
-import me.yq.remoting.config.DefaultConfig;
-import me.yq.remoting.support.RequestFutureMap;
+import me.yq.remoting.support.DefaultConfig;
+import me.yq.remoting.transport.RequestFutureMap;
 
 import java.io.Serializable;
 import java.util.Objects;

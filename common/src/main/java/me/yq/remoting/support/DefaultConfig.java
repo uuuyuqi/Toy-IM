@@ -1,4 +1,4 @@
-package me.yq.remoting.config;
+package me.yq.remoting.support;
 
 public class DefaultConfig {
     // todo 测试时改为 无限大

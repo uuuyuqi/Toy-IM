@@ -10,8 +10,8 @@ import me.yq.remoting.command.DefaultRequestCommand;
 import me.yq.remoting.command.DefaultResponseCommand;
 import me.yq.remoting.command.RemotingCommand;
 import me.yq.remoting.support.ChannelAttributes;
-import me.yq.remoting.support.RequestFutureMap;
 import me.yq.remoting.transport.CommandSendingDelegate;
+import me.yq.remoting.transport.RequestFutureMap;
 
 import java.util.Map;
 import java.util.Objects;

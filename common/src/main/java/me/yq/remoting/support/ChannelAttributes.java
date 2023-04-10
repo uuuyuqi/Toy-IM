@@ -1,6 +1,7 @@
 package me.yq.remoting.support;
 
 import io.netty.util.AttributeKey;
+import me.yq.remoting.transport.RequestFutureMap;
 
 /**
  * @author yq
