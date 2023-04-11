@@ -2,12 +2,12 @@ package me.yq.remoting.heartbeat;
 
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.timeout.IdleStateEvent;
-import me.yq.remoting.config.Config;
 import me.yq.remoting.config.DefaultServerConfig;
 import me.yq.remoting.config.ServerConfigNames;
 import me.yq.remoting.connection.ServerIdleConnHandler;
 import me.yq.remoting.session.SessionMap;
-import me.yq.remoting.support.session.Session;
+import me.yq.remoting.support.Config;
+import me.yq.remoting.transport.Session;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
