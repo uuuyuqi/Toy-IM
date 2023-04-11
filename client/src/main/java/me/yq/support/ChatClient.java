@@ -16,18 +16,21 @@ import me.yq.common.exception.SystemException;
 import me.yq.remoting.RemotingClient;
 import me.yq.remoting.Stateful;
 import me.yq.remoting.config.ClientConfigNames;
-import me.yq.remoting.config.Config;
 import me.yq.remoting.config.DefaultClientConfig;
 import me.yq.remoting.processor.MessageReceivedProcessor;
 import me.yq.remoting.processor.NoticeFromServerProcessor;
-import me.yq.remoting.support.session.Session;
+import me.yq.remoting.support.Config;
+import me.yq.remoting.transport.Callback;
+import me.yq.remoting.transport.Session;
 import me.yq.remoting.transport.process.RequestProcessor;
 import me.yq.remoting.transport.process.UserProcessor;
 import me.yq.remoting.utils.NamedThreadFactory;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -239,14 +242,48 @@ public class ChatClient extends Stateful {
         User from = new User(getCurrentUser().getUserId());
         User to = new User(targetUserId);
         Message message = new Message(from, to, msg);
-
+        messageMap.put(message.getMessageId(), message);
         BaseRequest request = new BaseRequest(BizCode.Messaging.code(), message);
 
-        BaseResponse baseResponse = this.remotingClient.sendRequestSync(request);
-        if (baseResponse == null)
-            throw new BusinessException("信息发送失败！请检查网络");
 
-        log.debug("信息已发送！收到的反馈：{}", baseResponse.getReturnMsg());
+        this.remotingClient.sendRequestCallback(request, new Callback() {
+
+            private final int messageId = message.getMessageId();
+
+            @Override
+            public void onResponse(BaseResponse response) {
+                // 对方成功回应，但是处理出现了问题
+                if (response.getStatus() != ResponseStatus.SUCCESS) {
+                    failedToSendMsg(messageId,"对方网络不佳，请稍后再试～");
+                }
+                log.debug("信息已发送！收到的反馈：{}", response.getReturnMsg());
+                messageMap.remove(messageId);
+            }
+
+            @Override
+            public void onException(Throwable cause) {
+                log.error("发送信息失败！原因：{}", cause.getMessage());
+                failedToSendMsg(messageId,"消息发送失败，请检查网络......");
+                messageMap.remove(messageId);
+            }
+
+            @Override
+            public void onTimeout() {
+                failedToSendMsg(messageId,"对方网络不佳，请稍后再试～");
+                messageMap.remove(messageId);
+            }
+
+        },this.bizThreadPool);
+    }
+
+    /**
+     * 已经发送的消息，但是对方还未回应，已经回应的会被移除
+     */
+    private final Map<Integer,Message> messageMap = new ConcurrentHashMap<>();
+
+    private void failedToSendMsg(int messageId, String possibleReason) {
+        // todo 重发机制
+        System.err.println("消息[" + messageMap.get(messageId).getMsg() + "]发送失败: " + possibleReason);
     }
 
     /**
@@ -300,5 +337,9 @@ public class ChatClient extends Stateful {
 
     public void setOnlineFlag(boolean onlineFlag) {
         this.onlineFlag = onlineFlag;
+    }
+
+    public ThreadPoolExecutor getBizThreadPool() {
+        return bizThreadPool;
     }
 }
