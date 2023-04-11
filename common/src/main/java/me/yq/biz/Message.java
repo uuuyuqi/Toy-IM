@@ -2,6 +2,8 @@ package me.yq.biz;
 
 import me.yq.biz.domain.User;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * 消息实体<br/>
  * 消息本身不分请求和响应，服务端也只会负责消息的转发
@@ -9,6 +11,10 @@ import me.yq.biz.domain.User;
  * @version v1.0 2023-02-14 5:29 PM
  */
 public class Message  {
+
+    private final int messageId = MSG_ID_GENERATOR.incrementAndGet();
+    private static final AtomicInteger MSG_ID_GENERATOR = new AtomicInteger(0);
+
     private final User fromUser;
 
     private final User toUser;
@@ -41,4 +47,7 @@ public class Message  {
         return sendTimestamp;
     }
 
+    public int getMessageId() {
+        return messageId;
+    }
 }
