@@ -10,13 +10,15 @@ import me.yq.common.BizCode;
 import me.yq.common.ResponseStatus;
 import me.yq.common.exception.BusinessException;
 import me.yq.common.exception.SystemException;
-import me.yq.remoting.config.Config;
 import me.yq.remoting.config.ServerConfigNames;
 import me.yq.remoting.session.SessionMap;
+import me.yq.remoting.support.Config;
+import me.yq.remoting.transport.Callback;
 import me.yq.remoting.transport.CommandSendingDelegate;
 import me.yq.remoting.transport.process.RequestProcessor;
 
 import java.util.List;
+import java.util.concurrent.Executor;
 
 
 /**
@@ -32,21 +34,24 @@ public class MessagingTransferProcessor extends RequestProcessor {
 
     private final Config config;
 
+    private Executor executor;
 
-    public MessagingTransferProcessor(SessionMap sessionMap, Config config) {
+
+    public MessagingTransferProcessor(SessionMap sessionMap, Config config, Executor executor) {
         super(true);
         this.sessionMap = sessionMap;
         this.config = config;
     }
 
-    public MessagingTransferProcessor(SessionMap sessionMap, Config config, List<Runnable> preTasks, List<Runnable> postTasks) {
-        super(true,preTasks, postTasks);
+    public MessagingTransferProcessor(SessionMap sessionMap, Config config, Executor executor, List<Runnable> preTasks, List<Runnable> postTasks) {
+        super(true, preTasks, postTasks);
         this.sessionMap = sessionMap;
         this.config = config;
     }
 
     /**
      * 接收 fromUser 的业务消息，并将消息发送给 targetUser
+     *
      * @param request 业务消息请求
      * @return 消息发送结果（消息是否发送成功）
      */
@@ -60,27 +65,55 @@ public class MessagingTransferProcessor extends RequestProcessor {
             throw new BusinessException("对方用户不在线!");
         }
 
-        BaseResponse response;
-        try {
-            response = sendMessageToTarget(message, targetUser, config.getLong(ServerConfigNames.WAIT_RESPONSE_MILLIS));
-            if (response.getStatus() != ResponseStatus.SUCCESS)
-                throw new SystemException("向目标用户发送信息失败！信息：" + response.getReturnMsg(),(Throwable) response.getAppResponse());
-        }catch (Exception e) {
-            log.error("向对方发送消息时出现异常，信息：{}",e.getMessage());
-            response = new BaseResponse(ResponseStatus.FAILED,"对方网络不佳，重发消息试试？",null);
-        }
-        return response;
+        sendMessageToTarget(message, targetUser, config.getLong(ServerConfigNames.WAIT_RESPONSE_MILLIS));
+        return new BaseResponse(ResponseStatus.SUCCESS);
     }
 
     /**
-     * 将消息转发送给目标用户
-     * @param message 待发送的消息
+     * 将消息转发送给目标用户，异步告知用户是否发送成功
+     *
+     * @param message    待发送的消息
      * @param targetUser 目标用户
-     * @return 发送结果
      */
-    private BaseResponse sendMessageToTarget(Message message, User targetUser, long timeoutMillis) {
+    private void sendMessageToTarget(Message message, User targetUser, long timeoutMillis) {
         Channel targetChannel = sessionMap.getUserChannel(targetUser.getUserId());
-        BaseRequest request = new BaseRequest(BizCode.Messaging.code(),message);
-        return CommandSendingDelegate.sendRequestSync(targetChannel,request,timeoutMillis);
+        BaseRequest request = new BaseRequest(BizCode.Messaging.code(), message);
+        CommandSendingDelegate.sendRequestCallback(
+                targetChannel,
+                request,
+                timeoutMillis,
+                new MessageSendFailedCallback(getChannelLocal().get(), message.getMessageId()),
+                executor
+        );
+    }
+
+    /**
+     * 消息发送失败回调，需要通知发送端这个消息发送失败了
+     */
+    private static class MessageSendFailedCallback implements Callback {
+
+        private final Channel fromChannel;
+
+        private final int messageId;
+
+        public MessageSendFailedCallback(Channel fromChannel, int messageId) {
+            this.fromChannel = fromChannel;
+            this.messageId = messageId;
+        }
+
+        @Override
+        public void onResponse(BaseResponse response) {
+            CommandSendingDelegate.sendResponseOneway(fromChannel.pipeline().lastContext(), messageId, new BaseResponse(response.getAppResponse()));
+        }
+
+        @Override
+        public void onException(Throwable cause) {
+            CommandSendingDelegate.sendResponseOneway(fromChannel.pipeline().lastContext(), messageId, new BaseResponse(new SystemException("不好意思服务器开小差了，请稍后再试！")));
+        }
+
+        @Override
+        public void onTimeout() {
+            CommandSendingDelegate.sendResponseOneway(fromChannel.pipeline().lastContext(), messageId, new BaseResponse(new SystemException("不好意思服务器开小差了，请稍后再试！")));
+        }
     }
 }
