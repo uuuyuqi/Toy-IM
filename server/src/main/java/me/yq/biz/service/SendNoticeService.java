@@ -5,8 +5,8 @@ import me.yq.biz.Notice;
 import me.yq.common.BaseRequest;
 import me.yq.common.BizCode;
 import me.yq.remoting.session.SessionMap;
-import me.yq.remoting.support.session.Session;
 import me.yq.remoting.transport.CommandSendingDelegate;
+import me.yq.remoting.transport.Session;
 
 
 // todo 接收通知失败，重发？
@@ -33,8 +33,7 @@ public enum SendNoticeService {
     }
 
 
-    public void sendNotice(String title, String content, Session session,long timeoutMillis){
-        Notice notice = new Notice(session.getUid(), title, content);
+    public void sendNotice(Notice notice, Session session,long timeoutMillis){
         BaseRequest request = new BaseRequest(BizCode.Noticing.code(), notice);
         Channel channel = session.getChannel();
         CommandSendingDelegate.sendRequestSync(channel,request,timeoutMillis);
