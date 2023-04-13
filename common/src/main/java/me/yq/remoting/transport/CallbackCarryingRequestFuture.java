@@ -18,12 +18,12 @@ public class CallbackCarryingRequestFuture extends RequestFuture {
 
     private ScheduledFuture<?> scheduledFuture;
 
-    public CallbackCarryingRequestFuture(int messageId, Callback callback) {
-        super(messageId);
+    public CallbackCarryingRequestFuture(int messageId, RequestFutureMap belongsTo, Callback callback) {
+        super(messageId,belongsTo);
         this.callback = callback;
     }
 
-    public DefaultResponseCommand acquireResponse(long timeoutMillis) {
+    protected DefaultResponseCommand acquireResponse(long timeoutMillis) {
         return responseCommand;
     }
 
@@ -53,6 +53,8 @@ public class CallbackCarryingRequestFuture extends RequestFuture {
             this.responseCommand.deserialize();
             callback.onResponse(this.responseCommand.getAppResponse());
         }
+
+        close();
     }
 
     public void setScheduledFuture(ScheduledFuture<?> scheduledFuture) {

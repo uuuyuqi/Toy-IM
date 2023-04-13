@@ -17,8 +17,8 @@ public class DefaultRequestFuture extends RequestFuture {
 
     private final CountDownLatch latch = new CountDownLatch(1);
 
-    public DefaultRequestFuture(int messageId) {
-        super(messageId);
+    public DefaultRequestFuture(int messageId, RequestFutureMap requestFutureMap) {
+        super(messageId,requestFutureMap);
     }
 
     /**
@@ -27,7 +27,7 @@ public class DefaultRequestFuture extends RequestFuture {
      * @param timeoutMillis 获取响应的超时时间，为 -1 时，表示无限等待；如果超时，会抛出异常
      * @return 业务响应
      */
-    public DefaultResponseCommand acquireResponse(long timeoutMillis) {
+    protected DefaultResponseCommand acquireResponse(long timeoutMillis) {
         // 在超时时间内做等待
         try {
             if (timeoutMillis == -1)

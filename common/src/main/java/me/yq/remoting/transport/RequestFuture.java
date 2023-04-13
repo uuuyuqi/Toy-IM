@@ -22,13 +22,19 @@ public abstract class RequestFuture {
         this.belongsTo = new WeakReference<>(belongsTo);
     }
 
+    public DefaultResponseCommand acquireAndClose(long timeoutMillis) {
+        DefaultResponseCommand responseCommand = acquireResponse(timeoutMillis);
+        close();
+        return responseCommand;
+    }
+
     /**
      * 获取响应，不同的子类实现会有不同获取响应的方法
      *
      * @param timeoutMillis 获取响应的超时时间
      * @return DefaultResponseCommand 通信层响应对象
      */
-    public abstract DefaultResponseCommand acquireResponse(long timeoutMillis);
+    protected abstract DefaultResponseCommand acquireResponse(long timeoutMillis);
 
     public void putFailedResponse(Throwable t) {
         putResponse(createFailedCommand(t));
@@ -44,7 +50,7 @@ public abstract class RequestFuture {
      * 关闭 future，主要是将 future 自己从 RequestFutureMap 中移除。
      * 因为到这个阶段，future 已经不会再被使用了，应该进行移除，否则会造成内存泄漏。
      */
-    public void close() {
+    protected void close() {
         try {
             RequestFutureMap requestFutureMap = belongsTo.get();
             if (requestFutureMap != null) {
