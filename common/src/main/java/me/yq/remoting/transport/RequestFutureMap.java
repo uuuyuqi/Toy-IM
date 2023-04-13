@@ -23,16 +23,6 @@ public final class RequestFutureMap {
 
     private final Map<Integer, RequestFuture> futureMap = new ConcurrentHashMap<>();
 
-
-    /**
-     * 记录发出的请求，以保证收到响应时，能发给对应的业务处理处。<br/>
-     *
-     * @param msgId 通信消息 id
-     */
-    public void addNewFuture(int msgId) {
-        futureMap.put(msgId, new RequestFuture(msgId));
-    }
-
     /**
      * 记录发出的请求，以保证收到响应时，能发给对应的业务处理处。<br/>
      *
@@ -59,14 +49,12 @@ public final class RequestFutureMap {
         requestFuture.putResponse(responseCommand);
     }
 
-
-
     /**
      * 移除调用任务
      *
      * @param msgId 消息 id
      */
-    private void removeSuchFuture(int msgId) {
+    public void removeSuchFuture(int msgId) {
         this.futureMap.remove(msgId);
     }
 
