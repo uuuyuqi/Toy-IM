@@ -5,13 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import me.yq.common.BizCode;
 import me.yq.remoting.RemotingServer;
 import me.yq.remoting.Stateful;
-import me.yq.remoting.config.Config;
 import me.yq.remoting.config.DefaultServerConfig;
 import me.yq.remoting.config.ServerConfigNames;
 import me.yq.remoting.processor.LogInProcessor;
 import me.yq.remoting.processor.LogOutProcessor;
 import me.yq.remoting.processor.MessagingTransferProcessor;
 import me.yq.remoting.session.SessionMap;
+import me.yq.remoting.support.Config;
 import me.yq.remoting.transport.process.RequestProcessor;
 import me.yq.remoting.transport.process.UserProcessor;
 import me.yq.remoting.utils.NamedThreadFactory;
@@ -145,7 +145,7 @@ public class ChatServer extends Stateful {
 
     private UserProcessor initUserProcessor() {
         if (useDefaultProcessors){
-            registerBizProcessor(BizCode.Messaging.code(), new MessagingTransferProcessor(this.getSessionMap(),this.config));
+            registerBizProcessor(BizCode.Messaging.code(), new MessagingTransferProcessor(this.getSessionMap(),this.config, this.bizThreadPool));
             registerBizProcessor(BizCode.LogInRequest.code(), new LogInProcessor(this.getSessionMap(),this.config));
             registerBizProcessor(BizCode.LogOutRequest.code(), new LogOutProcessor());
         }
