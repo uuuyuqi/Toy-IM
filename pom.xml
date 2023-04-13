@@ -12,6 +12,7 @@
         <module>common</module>
         <module>client</module>
         <module>server</module>
+        <module>all-integration-tests</module>
     </modules>
 
     <properties>
@@ -27,6 +28,18 @@
             <version>5.9.2</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>3.10.0</version>
+            <scope>test</scope>
+        </dependency>
+        <!--<dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-api-mockito2</artifactId>
+            <version>2.0.9</version>
+        </dependency>-->
+
 
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -56,10 +69,18 @@
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/com.alipay.sofa/hessian -->
+        <!-- sofa-hessian -->
         <dependency>
             <groupId>com.alipay.sofa</groupId>
             <artifactId>hessian</artifactId>
             <version>4.0.4</version>
+        </dependency>
+        <!-- kryo -->
+        <!-- shaded 和 普通版 相比，shaded 了 asm 相关的包，防止和项目中其他 asm 的包冲突 -->
+        <dependency>
+            <groupId>com.esotericsoftware</groupId>
+            <artifactId>kryo-shaded</artifactId>
+            <version>4.0.2</version>
         </dependency>
         
     </dependencies>
