@@ -4,7 +4,7 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandler;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import me.yq.remoting.config.Config;
+import me.yq.remoting.support.Config;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;

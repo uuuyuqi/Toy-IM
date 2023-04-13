@@ -7,6 +7,7 @@ import me.yq.biz.domain.User;
 import me.yq.common.BaseRequest;
 import me.yq.common.BizCode;
 import me.yq.common.ResponseStatus;
+import me.yq.common.exception.BusinessException;
 import me.yq.remoting.transport.process.CommandHandler;
 import me.yq.support.ChatClient;
 import me.yq.utils.AssertUtils;
@@ -18,8 +19,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.Collections;
 
 /**
  * MessageReceivedProcessor 测试类，主要覆盖的功能点：
@@ -58,7 +57,7 @@ class MessageReceivedProcessorTest {
         User to = new User();
         to.setName("to");
         message = new Message(from, to, "hello");
-        request = new BaseRequest(BizCode.Messaging, message);
+        request = new BaseRequest(BizCode.Messaging.code(), message);
     }
 
     @AfterEach
@@ -94,9 +93,7 @@ class MessageReceivedProcessorTest {
     @DisplayName("测试接受消息，但是出现了异常")
     void messageReceived_fail() throws Exception {
 
-        MessageReceivedProcessor messageReceivedProcessor = new MessageReceivedProcessor(clientMock, Collections.singletonList(() -> {
-            throw new RuntimeException("Mock Exception");
-        }),null);
+        MessageReceivedProcessor messageReceivedProcessor = new MessageReceivedProcessor(clientMock);
 
 
         // 定义 channelRead 后，会调用 messageReceivedProcessor
@@ -104,6 +101,11 @@ class MessageReceivedProcessorTest {
             messageReceivedProcessor.processRequest(ctx,1,request);
             return null;
         }).when(commandHandler).channelRead(ctx,request);
+
+        // mock 业务异常
+        Mockito.doAnswer(invocation -> {
+            throw new BusinessException("Mock Exception");
+        }).when(clientMock).acceptMsg(Mockito.any(),Mockito.anyString());
 
 
         // 开始测试

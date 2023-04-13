@@ -4,7 +4,7 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.timeout.IdleStateEvent;
 import me.yq.remoting.command.HeartbeatCommand;
 import me.yq.remoting.config.ClientConfigNames;
-import me.yq.remoting.config.Config;
+import me.yq.remoting.support.Config;
 import me.yq.support.ChatClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

@@ -2,12 +2,17 @@ package base;
 
 import me.yq.biz.domain.User;
 import me.yq.common.BizCode;
-import me.yq.remoting.config.*;
+import me.yq.remoting.config.ClientConfigNames;
+import me.yq.remoting.config.DefaultClientConfig;
+import me.yq.remoting.config.DefaultServerConfig;
+import me.yq.remoting.config.ServerConfigNames;
 import me.yq.remoting.processor.LogInProcessor;
 import me.yq.remoting.processor.MessageReceivedProcessor;
 import me.yq.remoting.processor.MessagingTransferProcessor;
 import me.yq.remoting.session.SessionMap;
+import me.yq.remoting.support.Config;
 import me.yq.remoting.utils.CommonUtils;
+import me.yq.remoting.utils.DirectThreadPool;
 import me.yq.support.ChatClient;
 import me.yq.support.ChatServer;
 import org.junit.jupiter.api.AfterEach;
@@ -15,6 +20,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -47,7 +54,7 @@ public class MessageTransferIntegrationTest {
         // 准备服务端
         serverConfig.putConfig(ServerConfigNames.IDLE_CHECK_ENABLE,"false");
         server.registerBizProcessor(BizCode.LogInRequest.code(),new LogInProcessor(sessionMap, serverConfig));
-        server.registerBizProcessor(BizCode.Messaging.code(),new MessagingTransferProcessor(sessionMap, serverConfig));
+        server.registerBizProcessor(BizCode.Messaging.code(),new MessagingTransferProcessor(sessionMap, serverConfig,DirectThreadPool.getInstance()));
         server.start();
 
         // 准备客户端
@@ -81,7 +88,7 @@ public class MessageTransferIntegrationTest {
 
     @Test
     @DisplayName("测试客户端发送消息")
-    void test_sendMessage(){
+    void test_sendMessage() throws InterruptedException {
         int messageCount = 10;
         assertDoesNotThrow(()->{
             for (int i = 0; i < messageCount; i++) {
@@ -89,6 +96,9 @@ public class MessageTransferIntegrationTest {
                 spyClientB.sendMsg(157146,"hello:" + CommonUtils.now());
             }
         },"消息互发时，不应该抛出异常");
+
+        TimeUnit.SECONDS.sleep(1); // 异步收发，可能需要一些时间
+
 
         Mockito.verify(spyClientA,Mockito.times(messageCount)).acceptMsg(Mockito.any(User.class),Mockito.anyString());
         Mockito.verify(spyClientB,Mockito.times(messageCount)).acceptMsg(Mockito.any(User.class),Mockito.anyString());

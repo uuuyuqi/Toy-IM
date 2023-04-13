@@ -1,5 +1,7 @@
 package me.yq.remoting.config;
 
+import me.yq.remoting.support.Config;
+
 /**
  * @author yq
  * @version v1.0 2023-03-30 21:35

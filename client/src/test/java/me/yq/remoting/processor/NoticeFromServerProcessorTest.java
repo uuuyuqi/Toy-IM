@@ -7,7 +7,7 @@ import me.yq.biz.domain.User;
 import me.yq.common.BaseRequest;
 import me.yq.common.BizCode;
 import me.yq.common.ResponseStatus;
-import me.yq.common.exception.SystemException;
+import me.yq.common.exception.BusinessException;
 import me.yq.remoting.transport.process.CommandHandler;
 import me.yq.support.ChatClient;
 import me.yq.utils.AssertUtils;
@@ -19,8 +19,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.Collections;
 
 
 /**
@@ -53,7 +51,7 @@ class NoticeFromServerProcessorTest {
 
         // 准备 mock 数据
         notice = new Notice(123, "===notice===", "work hard or you may lose this job");
-        request = new BaseRequest(BizCode.Noticing, notice);
+        request = new BaseRequest(BizCode.Noticing.code(), notice);
     }
 
     @AfterEach
@@ -85,18 +83,19 @@ class NoticeFromServerProcessorTest {
     @Test
     @DisplayName("接收通知失败，返回失败响应")
     void testAcceptNotice_fail() throws Exception {
-        NoticeFromServerProcessor noticeFromServerProcessor = new NoticeFromServerProcessor(
-                clientMock,
-                Collections.singletonList(()->{
-                    throw new SystemException("test exception");
-                }),
-                null);
+        NoticeFromServerProcessor noticeFromServerProcessor = new NoticeFromServerProcessor(clientMock);
 
         // 定义 channelRead 后，会调用 messageReceivedProcessor
         Mockito.doAnswer(invocation -> {
             noticeFromServerProcessor.processRequest(ctx, 1, request);
             return null;
         }).when(commandHandler).channelRead(ctx, request);
+
+        // mock 业务异常
+        Mockito.doAnswer(invocation -> {
+            throw new BusinessException("Mock Exception");
+        }).when(clientMock).acceptNotice(Mockito.any(Notice.class));
+
 
         // 开始测试
         channel.writeInbound(request);
