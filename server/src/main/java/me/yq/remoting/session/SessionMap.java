@@ -2,12 +2,12 @@ package me.yq.remoting.session;
 
 import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
-import me.yq.remoting.config.Config;
 import me.yq.remoting.config.ServerConfigNames;
 import me.yq.remoting.processor.LogOutProcessor;
 import me.yq.remoting.support.ChannelAttributes;
-import me.yq.remoting.support.RequestFutureMap;
-import me.yq.remoting.support.session.Session;
+import me.yq.remoting.support.Config;
+import me.yq.remoting.transport.RequestFutureMap;
+import me.yq.remoting.transport.Session;
 
 import java.util.Collection;
 import java.util.Map;
@@ -23,19 +23,19 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @version v1.0 2023-02-15 4:06 PM
  */
 @Slf4j
-public class ServerSessionMap {
+public class SessionMap {
 
     // volatile prevent the DCL construct escape
-    private static volatile ServerSessionMap serverSessionMap;
+    private static volatile SessionMap INSTANCE;
 
     private static final AtomicBoolean created = new AtomicBoolean(false);
 
     private final Config serverConfig;
 
-    private ServerSessionMap(Config config) {
+    private SessionMap(Config config) {
         if (created.compareAndSet(false, true)) {
             this.serverConfig = config;
-            serverSessionMap = this;
+            INSTANCE = this;
         } else
             throw new UnsupportedOperationException("[" + this.getClass().getSimpleName() + "] 属于单例对象，不允许重复创建！");
     }
@@ -43,15 +43,15 @@ public class ServerSessionMap {
 
     private static final Object CREATE_LOCK = new Object();
 
-    public static ServerSessionMap getInstanceOrCreate(Config config) {
+    public static SessionMap getInstanceOrCreate(Config config) {
         // DCL
-        ServerSessionMap local = serverSessionMap;
+        SessionMap local = INSTANCE;
         if (local == null) {
             synchronized (CREATE_LOCK) {
-                local = serverSessionMap;
+                local = INSTANCE;
                 if (local == null) {
-                    local = new ServerSessionMap(config);
-                    serverSessionMap = local;
+                    local = new SessionMap(config);
+                    INSTANCE = local;
                 }
             }
         }
@@ -98,8 +98,9 @@ public class ServerSessionMap {
 
     /**
      * 根据用户 id 将用户 session 移除（一般发生在手工注销的情况）。
-     * 在清除时，会将 session 中的 requestFuture 对象一并清理掉
-     * 参考：{@link LogOutProcessor#process(me.yq.common.BaseRequest)}
+     * 在清除时，会将 session 中的 requestFuture 对象一并清理掉。
+     * 注意在调用完本方法之后，记得将 channel 关闭。
+     * 参考：{@link LogOutProcessor#doProcess(me.yq.common.BaseRequest)}
      */
     public void removeSessionSafe(long uid) {
 
@@ -119,9 +120,6 @@ public class ServerSessionMap {
         // 3.从 session 中移除
         sessionMap.remove(uid);
         channel.attr(ChannelAttributes.CHANNEL_STATE).set(ChannelAttributes.ChannelState.CLOSED);
-
-        // 4.关闭 channel
-        channel.close();
 
     }
 
