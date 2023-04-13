@@ -15,16 +15,16 @@ import me.yq.remoting.codec.protocol.ProtocolCodec;
 import me.yq.remoting.config.ClientConfigNames;
 import me.yq.remoting.connection.ClientHeartbeatHandler;
 import me.yq.remoting.support.ChannelAttributes;
-import me.yq.remoting.support.RequestFutureMap;
-import me.yq.remoting.support.session.Session;
+import me.yq.remoting.transport.Callback;
 import me.yq.remoting.transport.CommandSendingDelegate;
+import me.yq.remoting.transport.RequestFutureMap;
+import me.yq.remoting.transport.Session;
 import me.yq.remoting.transport.process.CommandHandler;
 import me.yq.remoting.utils.NamedThreadFactory;
 import me.yq.support.ChatClient;
 
 import java.net.InetSocketAddress;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.concurrent.Executor;
 
 
 @Slf4j
@@ -41,11 +41,6 @@ public class RemotingClient {
             Runtime.getRuntime().availableProcessors() * 2,
             new NamedThreadFactory("Client-Worker", true)
     );
-
-    /**
-     * 额外的处理器，放在所有处理器之前
-     */
-    private final List<ChannelHandler> extendedHandlersAhead = new LinkedList<>();
 
     public RemotingClient(ChatClient chatClient) {
         this.client = chatClient;
@@ -117,11 +112,10 @@ public class RemotingClient {
 
         // 如果老连接可用，则不需要建联
         if (serverSession != null) {
-            if (serverSession.isConnected()){
+            if (serverSession.isConnected()) {
                 log.warn("当前已经连接到服务端，无需重复连接！");
                 return;
-            }
-            else{
+            } else {
                 Channel serverChannel = serverSession.getChannel();
                 if (serverChannel != null)
                     serverChannel.close();
@@ -132,7 +126,7 @@ public class RemotingClient {
 
         String serverIP = client.getConfig().getValue(ClientConfigNames.REMOTE_SERVER_HOST);
         int serverPort = client.getConfig().getInt(ClientConfigNames.REMOTE_SERVER_PORT);
-        ChannelFuture channelFuture = this.clientBootstrap.connect(new InetSocketAddress(serverIP,serverPort));
+        ChannelFuture channelFuture = this.clientBootstrap.connect(new InetSocketAddress(serverIP, serverPort));
         channelFuture.addListener(
                 future -> {
                     if (!future.isSuccess()) {
@@ -154,10 +148,21 @@ public class RemotingClient {
 
     /**
      * 检测和服务端是否正常建联
+     *
      * @return 和服务端的长连接异常情况下则返回 false，其他均为 true
      */
     public boolean hasConnected() {
         return serverSession != null && serverSession.isConnected();
+    }
+
+
+    public void sendRequestCallback(BaseRequest request, Callback callback, Executor executor) {
+        CommandSendingDelegate.sendRequestCallback(
+                this.serverSession.getChannel(),
+                request,
+                client.getConfig().getLong(ClientConfigNames.WAIT_RESPONSE_MILLIS),
+                callback,
+                executor);
     }
 
 
