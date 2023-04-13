@@ -1,4 +1,4 @@
-package me.yq.remoting.test.common.domain;
+package me.yq.test.common.domain;
 
 import java.util.LinkedHashMap;
 

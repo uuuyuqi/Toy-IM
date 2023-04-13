@@ -1,7 +1,8 @@
-package me.yq.remoting.test.common.domain;
+package me.yq.test.common.domain;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
@@ -12,7 +13,8 @@ import java.io.Serializable;
  */
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class User implements Serializable {
     int id;
-    Object friend;
+    Friend friend;
 }
