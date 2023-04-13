@@ -28,7 +28,9 @@ public class UserDao {
     }
 
     public User findUser(User user) {
-        return findFromMockDB(user);
+        User fromMockDB = findFromMockDB(user);
+        // 如果查询结果不为  null，就生成一个 copy 对象并返回
+        return fromMockDB == null ? null : fromMockDB.copy();
     }
 
 
