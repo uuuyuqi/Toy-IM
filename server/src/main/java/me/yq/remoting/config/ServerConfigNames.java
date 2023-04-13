@@ -26,8 +26,8 @@ public class ServerConfigNames {
     // 优雅移除单个 channel 超时时间
     public static final String REMOVE_TIMEOUT_MILLIS = "REMOVE_TIMEOUT_MILLIS";
 
-    // 心跳开启
-    public static final String HEARTBEAT_ENABLE = "HEARTBEAT_ENABLE";
+    // 空闲检测开启
+    public static final String IDLE_CHECK_ENABLE = "IDLE_CHECK_ENABLE";
 
     // 等待响应消息超时时间
     public static final String WAIT_RESPONSE_MILLIS = "WAIT_RESPONSE_MILLIS";
