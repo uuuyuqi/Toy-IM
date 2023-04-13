@@ -8,7 +8,9 @@ import me.yq.common.ResponseStatus;
 import me.yq.remoting.command.DefaultRequestCommand;
 import me.yq.remoting.command.DefaultResponseCommand;
 import me.yq.remoting.support.ChannelAttributes;
-import me.yq.remoting.support.RequestFutureMap;
+import me.yq.remoting.transport.DefaultRequestFuture;
+import me.yq.remoting.transport.RequestFuture;
+import me.yq.remoting.transport.RequestFutureMap;
 import me.yq.test.processors.SimpleEchoProcessor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -97,12 +99,13 @@ class UserProcessorTest {
     @DisplayName("测试响应的提交")
     void submitResponse() {
         int reqId = 15;
+        RequestFuture future = new DefaultRequestFuture(15,null);
         RequestFutureMap requestFutureMap = new RequestFutureMap();
-        requestFutureMap.addNewFuture(reqId);
+        requestFutureMap.addNewFuture(future);
         ctx.channel().attr(ChannelAttributes.CHANNEL_REQUEST_FUTURE_MAP).set(requestFutureMap);
 
         userProcessor.processCommand(ctx, generateDeserializedResponseCommand(reqId));
-        DefaultResponseCommand responseCommand = requestFutureMap.takeResponseCommand(reqId, 5000);
+        DefaultResponseCommand responseCommand = future.acquireAndClose(3000);
 
         assertEquals(responseCommand.getAppResponse().getStatus(), ResponseStatus.SUCCESS, "响应状态不正确");
     }
