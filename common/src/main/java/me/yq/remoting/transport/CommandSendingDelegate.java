@@ -10,11 +10,9 @@ import me.yq.common.exception.SystemException;
 import me.yq.remoting.command.DefaultRequestCommand;
 import me.yq.remoting.command.DefaultResponseCommand;
 import me.yq.remoting.support.ChannelAttributes;
+import me.yq.remoting.utils.NamedThreadFactory;
 
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 
 /**
@@ -35,7 +33,7 @@ public class CommandSendingDelegate {
     /**
      * 后台调度线程池，专用于监控异步调用的情况下，请求是否超时
      */
-    private static final ScheduledExecutorService Timer = new ScheduledThreadPoolExecutor(1);
+    private static final ScheduledExecutorService TimeoutChecker = new ScheduledThreadPoolExecutor(1,new NamedThreadFactory("TimeoutChecker",true));
 
 
     //================== 发送请求 ==================
@@ -48,9 +46,9 @@ public class CommandSendingDelegate {
      * @return 响应数据
      */
     public static BaseResponse sendRequestSync(Channel channel, BaseRequest request, long timeoutMillis) {
-        RequestFuture future = internalSendRequestForFuture(channel, request);
+        RequestFuture future = internalSendRequestAsync(channel, request,null);
 
-        DefaultResponseCommand responseCommand = future.waitAndGetResponse(timeoutMillis);
+        DefaultResponseCommand responseCommand = future.acquireAndClose(timeoutMillis);
 
         if (responseCommand == null)
             return null;
@@ -59,8 +57,14 @@ public class CommandSendingDelegate {
         return responseCommand.getAppResponse();
     }
 
+    /**
+     * 异步发送请求，发送完之后会得到一个 future，可以通过 future 获取响应。
+     * @param channel 接收消息的 channel
+     * @param request 待发送的业务信息
+     * @return future，该 future 可以阻塞式获取响应
+     */
     public static BaseResponseFuture sendRequestAsync(Channel channel, BaseRequest request) {
-        RequestFuture future = internalSendRequestForFuture(channel, request);
+        RequestFuture future = internalSendRequestAsync(channel, request, null);
         return new BaseResponseFuture(future);
     }
 
@@ -73,22 +77,22 @@ public class CommandSendingDelegate {
      * @param request       待发送的业务信息
      * @param timeoutMillis 等待响应超时时间，为 -1 表示用不超时
      * @param callback      回调函数
+     * @param executor      回调函数的执行线程池
      */
-    public static void sendRequestCallback(Channel channel, BaseRequest request, long timeoutMillis, Callback callback) {
+    public static void sendRequestCallback(Channel channel, BaseRequest request, long timeoutMillis, Callback callback, Executor executor) {
 
-        RequestFuture future = internalSendRequestForFuture(channel, request);
+        RequestFuture future = internalSendRequestAsync(channel, request, callback);
 
         // 提交超时检测任务
-        ScheduledFuture<?> scheduledFuture = Timer.schedule(() -> {
+        ScheduledFuture<?> scheduledFuture = TimeoutChecker.schedule(() -> {
             // 超时前再确认下是否已经有响应了
-            DefaultResponseCommand responseCommand = future.waitAndGetResponse(0);
+            DefaultResponseCommand responseCommand = future.acquireAndClose(0);
             if (responseCommand == null)
                 callback.onTimeout();
 
         }, timeoutMillis, TimeUnit.MILLISECONDS);
 
-        future.setScheduledFuture(scheduledFuture);
-
+        ((CallbackCarryingRequestFuture)future).setScheduledFuture(scheduledFuture);
     }
 
 
@@ -99,15 +103,16 @@ public class CommandSendingDelegate {
      *
      * @param channel 待发送请求的 channel
      * @param request 待发送的请求
+     * @param callback 回调函数，该参数决定了获取的 future 的类型是 普通的阻塞式 future 还是 callback 形式
      * @return 请求的 future
      */
-    private static RequestFuture internalSendRequestForFuture(Channel channel, BaseRequest request) {
+    private static RequestFuture internalSendRequestAsync(Channel channel, BaseRequest request, Callback callback) {
         ensureChannelHealthy(channel);
 
         DefaultRequestCommand requestCommand = wrapSerializedRequestCommand(request);
         int requestId = requestCommand.getMessageId();
-        RequestFuture future = new RequestFuture(requestId);
         RequestFutureMap futureMapInChannel = channel.attr(ChannelAttributes.CHANNEL_REQUEST_FUTURE_MAP).get();
+        RequestFuture future = callback == null ? new DefaultRequestFuture(requestId,futureMapInChannel) : new CallbackCarryingRequestFuture(requestId, futureMapInChannel,callback);
         futureMapInChannel.addNewFuture(future);
 
         try {
@@ -115,9 +120,8 @@ public class CommandSendingDelegate {
                     f -> {
                         if (!f.isSuccess()) {
                             String errMsg = "消息发送失败!  异常信息： " + f.cause().getMessage();
-                            // todo 构思好怎么构建异常，放到 future 中，是序列化后的还是序列化前的？
-                            //  到底在哪里进行反序列化？
                             future.putFailedResponse(f.cause());
+                            futureMapInChannel.removeSuchFuture(requestId);
                             throw new SystemException(errMsg);
                         }
                     }
