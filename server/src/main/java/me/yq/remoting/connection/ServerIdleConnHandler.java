@@ -7,12 +7,15 @@ import io.netty.handler.timeout.IdleStateEvent;
 import lombok.extern.slf4j.Slf4j;
 import me.yq.remoting.session.SessionMap;
 
+import static io.netty.channel.ChannelHandler.Sharable;
+
 /**
  * 服务端空闲检测处理器，主要检测是否存在客户端长时间没有数据来往。对于检测出来的客户端，直接将其从在线列表中摘除，并关闭连接。
  * @author yq
  * @version v1.0 2023-04-06 19:19
  */
 @Slf4j
+@Sharable
 public class ServerIdleConnHandler extends ChannelInboundHandlerAdapter {
 
     private final SessionMap sessionMap;
