@@ -21,13 +21,11 @@
             <groupId>me.yq</groupId>
             <artifactId>client</artifactId>
             <version>1.0-SNAPSHOT</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>me.yq</groupId>
             <artifactId>server</artifactId>
             <version>1.0-SNAPSHOT</version>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 
