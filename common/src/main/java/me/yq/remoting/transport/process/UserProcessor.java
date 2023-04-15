@@ -46,7 +46,7 @@ public class UserProcessor {
     }
 
 
-    public void registerBizProcessors(byte code, RequestProcessor processor) {
+    public void registerBizProcessor(byte code, RequestProcessor processor) {
         RequestProcessor processorOld = this.bizProcessors.put(code, Objects.requireNonNull(processor));
         if (processorOld != null)
             throw new UnsupportedOperationException("不允许重复注册 processors");

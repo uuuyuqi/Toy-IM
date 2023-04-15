@@ -63,9 +63,9 @@ class UserProcessorTest {
 
 
         // 注册处理器
-        userProcessor.registerBizProcessors((byte) 1, processor1);
-        userProcessor.registerBizProcessors((byte) 2, processor2);
-        userProcessor.registerBizProcessors((byte) 3, processor3);
+        userProcessor.registerBizProcessor((byte) 1, processor1);
+        userProcessor.registerBizProcessor((byte) 2, processor2);
+        userProcessor.registerBizProcessor((byte) 3, processor3);
     }
 
     @AfterEach
