@@ -79,10 +79,8 @@ public class RemotingServer {
                 handlersAhead.forEach((name, supplier) -> pipeline.addLast(name, supplier.get()));
 
                 pipeline.addLast("LoggingHandler", loggingHandler);
-                pipeline.addLast("ConnectionHandler", connectionHandler);
-                pipeline.addLast("ProtocolCodec", new ProtocolCodec());
 
-                pipeline.addLast("ServerHeartbeatHandler", heartbeatHandler);
+                pipeline.addLast("ConnectionHandler", connectionHandler);
 
                 if (serverConfig.getBoolean(ServerConfigNames.IDLE_CHECK_ENABLE)) {
                     Integer idleSeconds = serverConfig.getInt(ServerConfigNames.CLIENT_TIMEOUT_SECONDS);
@@ -90,6 +88,8 @@ public class RemotingServer {
                     pipeline.addLast("ServerIdleConnHandler", idleConnHandler);
                 }
 
+                pipeline.addLast("ProtocolCodec", new ProtocolCodec());
+                pipeline.addLast("ServerHeartbeatHandler", heartbeatHandler);
                 pipeline.addLast("CommandHandler", commandHandler);
             }
         });
