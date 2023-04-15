@@ -19,7 +19,7 @@ public class DefaultClientConfig extends Config {
         putConfig(ClientConfigNames.BIZ_CORE_THREAD_NUM,"20");
         putConfig(ClientConfigNames.BIZ_MAX_THREAD_NUM,"200");
         putConfig(ClientConfigNames.BIZ_EXTRA_T_ALIVE_SECONDS,"30");
-        putConfig(ClientConfigNames.HEARTBEAT_ENABLE,"false");
+        putConfig(ClientConfigNames.HEARTBEAT_ENABLE,"true");
         putConfig(ClientConfigNames.WAIT_RESPONSE_MILLIS,"3000");
         putConfig(ClientConfigNames.SEND_ONEWAY_CONFIRM_MILLIS,"3000");
     }
