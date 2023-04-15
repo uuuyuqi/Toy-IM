@@ -14,6 +14,7 @@ import me.yq.common.BaseResponse;
 import me.yq.remoting.codec.protocol.ProtocolCodec;
 import me.yq.remoting.config.ClientConfigNames;
 import me.yq.remoting.connection.ClientHeartbeatHandler;
+import me.yq.remoting.connection.ConnectionHandler;
 import me.yq.remoting.support.ChannelAttributes;
 import me.yq.remoting.transport.Callback;
 import me.yq.remoting.transport.CommandSendingDelegate;
@@ -65,6 +66,7 @@ public class RemotingClient {
             LoggingHandler loggingHandler = new LoggingHandler(LogLevel.DEBUG);
             ClientHeartbeatHandler heartbeatHandler = new ClientHeartbeatHandler(this.client);
             CommandHandler commandHandler = new CommandHandler(this.client.getUserProcessor());
+            ConnectionHandler connectionHandler = new ConnectionHandler(this.client);
             bootstrap.handler(new ChannelInitializer<NioSocketChannel>() {
                 @Override
                 protected void initChannel(NioSocketChannel ch) {
@@ -77,6 +79,7 @@ public class RemotingClient {
                         pipeline.addLast("ServerHeartbeatHandler", heartbeatHandler);
                     }
                     pipeline.addLast("CommandHandler", commandHandler);
+                    pipeline.addLast("ConnectionHandler", connectionHandler);
                 }
             });
             clientBootstrap = bootstrap;
