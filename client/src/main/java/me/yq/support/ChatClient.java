@@ -103,7 +103,7 @@ public class ChatClient extends Stateful {
         if (useDefaultProcessors)
             throw new RuntimeException("检测到使用默认配置(useDefaultProcessors=true)，不允许手工配置 processor!");
 
-        userProcessor.registerBizProcessors(code, processor);
+        userProcessor.registerBizProcessor(code, processor);
     }
 
 
@@ -125,11 +125,12 @@ public class ChatClient extends Stateful {
     }
 
     private UserProcessor initUserProcessor() {
-        if (useDefaultProcessors) {
-            registerBizProcessor(BizCode.Messaging.code(), new MessageReceivedProcessor(this));
-            registerBizProcessor(BizCode.Noticing.code(), new NoticeFromServerProcessor(this));
+        UserProcessor userProcessor = new UserProcessor(bizThreadPool);
+        if (useDefaultProcessors){
+            userProcessor.registerBizProcessor(BizCode.Messaging.code(), new MessageReceivedProcessor(this));
+            userProcessor.registerBizProcessor(BizCode.Noticing.code(), new NoticeFromServerProcessor(this));
         }
-        return new UserProcessor(bizThreadPool);
+        return userProcessor;
     }
 
     private RemotingClient initRemoting(){
@@ -218,6 +219,7 @@ public class ChatClient extends Stateful {
      * @param userId 用户账号
      */
     public synchronized void logOut(long userId) {
+        checkState();
         LogOutRequest logOutRequest = new LogOutRequest();
         logOutRequest.setUser(new User(userId));
 
@@ -238,6 +240,7 @@ public class ChatClient extends Stateful {
      * @param msg          消息内容
      */
     public synchronized void sendMsg(long targetUserId, String msg) {
+        checkState();
 
         User from = new User(getCurrentUser().getUserId());
         User to = new User(targetUserId);
@@ -282,6 +285,7 @@ public class ChatClient extends Stateful {
     private final Map<Integer,Message> messageMap = new ConcurrentHashMap<>();
 
     private void failedToSendMsg(int messageId, String possibleReason) {
+        checkState();
         // todo 重发机制
         System.err.println("消息[" + messageMap.get(messageId).getMsg() + "]发送失败: " + possibleReason);
     }
@@ -293,6 +297,7 @@ public class ChatClient extends Stateful {
      * @param msg  消息内容
      */
     public void acceptMsg(User from, String msg) {
+        checkState();
         Friend friend = getCurrentUser().queryFriend(from.getUserId());
         String newMsg = String.format("%-5s-- %s\n\"%s\"\n", friend.getName(), LocalDateTime.now().format(timeFormatter),msg);
         System.out.println(newMsg);
@@ -303,6 +308,7 @@ public class ChatClient extends Stateful {
      * @param notice 通知类型消息，一般具备标题和通知内容
      */
     public void acceptNotice(Notice notice) {
+        checkState();
         System.out.printf("收到新的通知：%s\n", notice.getNoticeTitle());
         System.out.println(notice.getNoticeContent());
     }
@@ -315,6 +321,13 @@ public class ChatClient extends Stateful {
         log.error("检测到和服务端的连接丢失，现在尝试重新连接......");
 
         this.onlineFlag = false;
+    }
+
+    private void checkState(){
+        if (getCurrentStatus() != Status.RUNNING)
+            throw new IllegalStateException("请先启动客户端");
+        else if (!isOnline())
+            throw new IllegalStateException("当前用户未登录，请先登录");
     }
 
     /**

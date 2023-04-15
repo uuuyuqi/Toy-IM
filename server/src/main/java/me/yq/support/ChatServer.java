@@ -121,7 +121,7 @@ public class ChatServer extends Stateful {
         if (useDefaultProcessors)
             throw new RuntimeException("检测到使用默认配置(useDefaultProcessors=true)，不允许手工配置 processor!");
 
-        userProcessor.registerBizProcessors(code, processor);
+        userProcessor.registerBizProcessor(code, processor);
     }
 
 
@@ -144,12 +144,13 @@ public class ChatServer extends Stateful {
     }
 
     private UserProcessor initUserProcessor() {
+        UserProcessor userProcessor = new UserProcessor(bizThreadPool);
         if (useDefaultProcessors){
-            registerBizProcessor(BizCode.Messaging.code(), new MessagingTransferProcessor(this.getSessionMap(),this.config, this.bizThreadPool));
-            registerBizProcessor(BizCode.LogInRequest.code(), new LogInProcessor(this.getSessionMap(),this.config));
-            registerBizProcessor(BizCode.LogOutRequest.code(), new LogOutProcessor());
+            userProcessor.registerBizProcessor(BizCode.Messaging.code(), new MessagingTransferProcessor(this.getSessionMap(),this.config, this.bizThreadPool));
+            userProcessor.registerBizProcessor(BizCode.LogInRequest.code(), new LogInProcessor(this.getSessionMap(),this.config));
+            userProcessor.registerBizProcessor(BizCode.LogOutRequest.code(), new LogOutProcessor());
         }
-        return new UserProcessor(bizThreadPool);
+        return userProcessor;
     }
 
     private RemotingServer initRemoting(){
