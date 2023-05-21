@@ -14,11 +14,11 @@ import static io.netty.channel.ChannelHandler.Sharable;
  */
 @Slf4j
 @Sharable
-public class ConnectionHandler extends ChannelInboundHandlerAdapter {
+public class ClientSideConnectionHandler extends ChannelInboundHandlerAdapter {
 
     private final ChatClient chatClient;
 
-    public ConnectionHandler(ChatClient chatClient) {
+    public ClientSideConnectionHandler(ChatClient chatClient) {
         this.chatClient = chatClient;
     }
 

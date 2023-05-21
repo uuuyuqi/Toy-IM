@@ -12,11 +12,11 @@ import static io.netty.channel.ChannelHandler.Sharable;
  * @version v1.0 2023-03-13 10:02
  */
 @Sharable
-public class ConnectionHandler extends ChannelDuplexHandler {
+public class ServerSideConnectionHandler extends ChannelDuplexHandler {
 
     private final SessionMap sessionMap;
 
-    public ConnectionHandler(SessionMap sessionMap) {
+    public ServerSideConnectionHandler(SessionMap sessionMap) {
         this.sessionMap = sessionMap;
     }
 
