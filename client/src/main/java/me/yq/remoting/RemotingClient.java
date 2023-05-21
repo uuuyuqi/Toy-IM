@@ -14,7 +14,7 @@ import me.yq.common.BaseResponse;
 import me.yq.remoting.codec.protocol.ProtocolCodec;
 import me.yq.remoting.config.ClientConfigNames;
 import me.yq.remoting.connection.ClientHeartbeatHandler;
-import me.yq.remoting.connection.ConnectionHandler;
+import me.yq.remoting.connection.ClientSideConnectionHandler;
 import me.yq.remoting.support.ChannelAttributes;
 import me.yq.remoting.transport.Callback;
 import me.yq.remoting.transport.CommandSendingDelegate;
@@ -25,7 +25,6 @@ import me.yq.remoting.utils.NamedThreadFactory;
 import me.yq.support.ChatClient;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.Executor;
 
 
 @Slf4j
@@ -66,7 +65,7 @@ public class RemotingClient {
             LoggingHandler loggingHandler = new LoggingHandler(LogLevel.DEBUG);
             ClientHeartbeatHandler heartbeatHandler = new ClientHeartbeatHandler(this.client);
             CommandHandler commandHandler = new CommandHandler(this.client.getUserProcessor());
-            ConnectionHandler connectionHandler = new ConnectionHandler(this.client);
+            ClientSideConnectionHandler clientSideConnectionHandler = new ClientSideConnectionHandler(this.client);
             bootstrap.handler(new ChannelInitializer<NioSocketChannel>() {
                 @Override
                 protected void initChannel(NioSocketChannel ch) {
@@ -79,7 +78,7 @@ public class RemotingClient {
                         pipeline.addLast("ServerHeartbeatHandler", heartbeatHandler);
                     }
                     pipeline.addLast("CommandHandler", commandHandler);
-                    pipeline.addLast("ConnectionHandler", connectionHandler);
+                    pipeline.addLast("ClientSideConnectionHandler", clientSideConnectionHandler);
                 }
             });
             clientBootstrap = bootstrap;
@@ -159,13 +158,12 @@ public class RemotingClient {
     }
 
 
-    public void sendRequestCallback(BaseRequest request, Callback callback, Executor executor) {
+    public void sendRequestCallback(BaseRequest request, Callback callback) {
         CommandSendingDelegate.sendRequestCallback(
                 this.serverSession.getChannel(),
                 request,
                 client.getConfig().getLong(ClientConfigNames.WAIT_RESPONSE_MILLIS),
-                callback,
-                executor);
+                callback);
     }
 
 

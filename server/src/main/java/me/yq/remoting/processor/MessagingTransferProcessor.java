@@ -34,19 +34,21 @@ public class MessagingTransferProcessor extends RequestProcessor {
 
     private final Config config;
 
-    private Executor executor;
+    private final Executor executor;
 
 
     public MessagingTransferProcessor(SessionMap sessionMap, Config config, Executor executor) {
         super(true);
         this.sessionMap = sessionMap;
         this.config = config;
+        this.executor = executor;
     }
 
     public MessagingTransferProcessor(SessionMap sessionMap, Config config, Executor executor, List<Runnable> preTasks, List<Runnable> postTasks) {
         super(true, preTasks, postTasks);
         this.sessionMap = sessionMap;
         this.config = config;
+        this.executor = executor;
     }
 
     /**
@@ -82,9 +84,7 @@ public class MessagingTransferProcessor extends RequestProcessor {
                 targetChannel,
                 request,
                 timeoutMillis,
-                new MessageSendFailedCallback(getChannelLocal().get(), message.getMessageId()),
-                executor
-        );
+                new MessageSendFailedCallback(getChannelLocal().get(), message.getMessageId(),this.executor));
     }
 
     /**
@@ -96,9 +96,12 @@ public class MessagingTransferProcessor extends RequestProcessor {
 
         private final int messageId;
 
-        public MessageSendFailedCallback(Channel fromChannel, int messageId) {
+        private final Executor executor;
+
+        public MessageSendFailedCallback(Channel fromChannel, int messageId, Executor executor) {
             this.fromChannel = fromChannel;
             this.messageId = messageId;
+            this.executor = executor;
         }
 
         @Override
@@ -114,6 +117,11 @@ public class MessagingTransferProcessor extends RequestProcessor {
         @Override
         public void onTimeout() {
             CommandSendingDelegate.sendResponseOneway(fromChannel.pipeline().lastContext(), messageId, new BaseResponse(new SystemException("不好意思服务器开小差了，请稍后再试！")));
+        }
+
+        @Override
+        public Executor getExecutor() {
+            return this.executor;
         }
     }
 }

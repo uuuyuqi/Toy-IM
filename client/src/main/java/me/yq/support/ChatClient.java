@@ -30,10 +30,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * 聊天客户端
@@ -276,7 +273,11 @@ public class ChatClient extends Stateful {
                 messageMap.remove(messageId);
             }
 
-        },this.bizThreadPool);
+            @Override
+            public Executor getExecutor() {
+                return ChatClient.this.bizThreadPool;
+            }
+        });
     }
 
     /**

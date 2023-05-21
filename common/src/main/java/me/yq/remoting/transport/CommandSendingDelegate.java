@@ -12,7 +12,10 @@ import me.yq.remoting.command.DefaultResponseCommand;
 import me.yq.remoting.support.ChannelAttributes;
 import me.yq.remoting.utils.NamedThreadFactory;
 
-import java.util.concurrent.*;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -77,9 +80,9 @@ public class CommandSendingDelegate {
      * @param request       待发送的业务信息
      * @param timeoutMillis 等待响应超时时间，为 -1 表示用不超时
      * @param callback      回调函数
-     * @param executor      回调函数的执行线程池
+
      */
-    public static void sendRequestCallback(Channel channel, BaseRequest request, long timeoutMillis, Callback callback, Executor executor) {
+    public static void sendRequestCallback(Channel channel, BaseRequest request, long timeoutMillis, Callback callback) {
 
         RequestFuture future = internalSendRequestAsync(channel, request, callback);
 
@@ -112,7 +115,9 @@ public class CommandSendingDelegate {
         DefaultRequestCommand requestCommand = wrapSerializedRequestCommand(request);
         int requestId = requestCommand.getMessageId();
         RequestFutureMap futureMapInChannel = channel.attr(ChannelAttributes.CHANNEL_REQUEST_FUTURE_MAP).get();
-        RequestFuture future = callback == null ? new DefaultRequestFuture(requestId,futureMapInChannel) : new CallbackCarryingRequestFuture(requestId, futureMapInChannel,callback);
+        RequestFuture future = callback == null ?
+                new DefaultRequestFuture(requestId,futureMapInChannel) :
+                new CallbackCarryingRequestFuture(requestId, futureMapInChannel,callback);
         futureMapInChannel.addNewFuture(future);
 
         try {

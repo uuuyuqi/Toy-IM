@@ -2,6 +2,7 @@ package me.yq.remoting.transport;
 
 import me.yq.remoting.command.DefaultResponseCommand;
 
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledFuture;
 
 /**
@@ -33,7 +34,6 @@ public class CallbackCarryingRequestFuture extends RequestFuture {
             scheduledFuture.cancel(true);
 
         this.responseCommand = responseCommand;
-
         onCallback();
     }
 
@@ -44,17 +44,21 @@ public class CallbackCarryingRequestFuture extends RequestFuture {
         if (callback == null)
             return;
 
-        if (this.responseCommand == null)
-            callback.onTimeout();
-        else if (this.responseCommand.getThrowable() != null)
-            callback.onException(this.responseCommand.getThrowable());
-        else {
-            // 在回调的情况下，需要在这里提前把反序列化做掉
-            this.responseCommand.deserialize();
-            callback.onResponse(this.responseCommand.getAppResponse());
-        }
+        Executor executor = callback.getExecutor();
+        executor.execute(()->{
+            if (this.responseCommand == null)
+                callback.onTimeout();
+            else if (this.responseCommand.getThrowable() != null)
+                callback.onException(this.responseCommand.getThrowable());
+            else {
+                // 在回调的情况下，需要在这里提前把反序列化做掉
+                this.responseCommand.deserialize();
+                callback.onResponse(this.responseCommand.getAppResponse());
+            }
 
-        close();
+            close();
+        });
+
     }
 
     public void setScheduledFuture(ScheduledFuture<?> scheduledFuture) {

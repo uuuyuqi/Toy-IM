@@ -12,9 +12,9 @@ import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
 import me.yq.remoting.codec.protocol.ProtocolCodec;
 import me.yq.remoting.config.ServerConfigNames;
-import me.yq.remoting.connection.ConnectionHandler;
 import me.yq.remoting.connection.ServerHeartbeatHandler;
 import me.yq.remoting.connection.ServerIdleConnHandler;
+import me.yq.remoting.connection.ServerSideConnectionHandler;
 import me.yq.remoting.support.Config;
 import me.yq.remoting.transport.process.CommandHandler;
 import me.yq.remoting.utils.NamedThreadFactory;
@@ -66,7 +66,7 @@ public class RemotingServer {
         bootstrap.childOption(ChannelOption.TCP_NODELAY, true);  // 禁止粘包
 
         LoggingHandler loggingHandler = new LoggingHandler(LogLevel.DEBUG);
-        ConnectionHandler connectionHandler = new ConnectionHandler(this.server.getSessionMap());
+        ServerSideConnectionHandler connectionHandler = new ServerSideConnectionHandler(this.server.getSessionMap());
         ServerIdleConnHandler idleConnHandler = new ServerIdleConnHandler(this.server.getSessionMap());
         ServerHeartbeatHandler heartbeatHandler = new ServerHeartbeatHandler();
         CommandHandler commandHandler = new CommandHandler(this.server.getUserProcessor());
@@ -80,7 +80,7 @@ public class RemotingServer {
 
                 pipeline.addLast("LoggingHandler", loggingHandler);
 
-                pipeline.addLast("ConnectionHandler", connectionHandler);
+                pipeline.addLast("ServerSideConnectionHandler", connectionHandler);
 
                 if (serverConfig.getBoolean(ServerConfigNames.IDLE_CHECK_ENABLE)) {
                     Integer idleSeconds = serverConfig.getInt(ServerConfigNames.CLIENT_TIMEOUT_SECONDS);
